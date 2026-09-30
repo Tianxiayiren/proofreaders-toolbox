@@ -5,6 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>编校工具箱 Proofreader&#39;s Toolbox · 通用规范汉字表查询</title>
 <style>
+
+
+  /* ===== 霞鹜文楷（自托管子集，按站点实际用字裁剪）=====
+     常规字重 400；Medium 档覆盖 500–700，使加粗文字也由真字体呈现，
+     避免浏览器合成加粗导致笔画发虚。unicode-range 覆盖全部平面，
+     含扩展 B/C/D 区的生僻字（如 鿍 鿎 鿏 𬉼 等）。 */
+  @font-face {
+    font-family: "LXGW WenKai Web";
+    src: url("fonts/lxgw-wenkai-400.woff2") format("woff2");
+    font-weight: 400; font-style: normal; font-display: swap;
+    unicode-range: U+0000-10FFFF;
+  }
+  @font-face {
+    font-family: "LXGW WenKai Web";
+    src: url("fonts/lxgw-wenkai-500.woff2") format("woff2");
+    font-weight: 500 700; font-style: normal; font-display: swap;
+    unicode-range: U+0000-10FFFF;
+  }
+
   :root {
     --bg: #f4f5f7;
     --panel: #ffffff;
@@ -30,7 +49,7 @@
        【约定】全站不使用等宽字体（ui-monospace / Consolas / Menlo 等）：这类字体的
        U+2014「—」仅约 0.5 字符宽，会让规范写法「——」只占约 1 个汉字宽、明显偏短。
        数字对齐需求改用 font-variant-numeric: tabular-nums 解决，不要换字体。 */
-    --han: "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
+    --han: "LXGW WenKai Web", "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
            "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Source Han Sans SC",
            "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
   }

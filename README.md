@@ -51,6 +51,25 @@ npm run build             # 等价于 node scripts/build-site.js
 
 ## 字体统一说明
 
+**字体已自托管，读者无需安装霞鹜文楷**。站点内置该字体的裁剪子集（`public/fonts/`，两档共约 5 MB）：
+
+| 文件 | 字重 | 说明 |
+| --- | --- | --- |
+| `lxgw-wenkai-400.woff2` | 400 | 正文常规 |
+| `lxgw-wenkai-500.woff2` | 500–700 | 中粗：标题、加粗、术语名等（用真字体而非浏览器合成加粗） |
+
+- 子集**按站点实际用字裁剪**：全部 8105 字 + 繁体/异体 + 页面文字，共约 11000 字，体积从原字体 24 MB 降到 2.5 MB。
+- 通过 `unicode-range: U+0000-10FFFF` 覆盖全部平面，**扩展 B/C/D 区生僻字（如 `鿍 鿎 鿏 𬉼`）也在覆盖内**——这是宋体、楷体等系统字体做不到的。
+- 浏览器**按需下载**：只加载当前页面实际用到的那一档，且仅首次访问时下载，之后走缓存。
+- 重新生成（需本机已安装霞鹜文楷，脚本会从系统字体目录读取源文件）：
+
+```bash
+python scripts/build-fonts.py
+```
+
+- 若字体文件缺失或加载失败，会按下面的字体栈自动回退到系统字体，页面不会报错。
+
+
 界面上所有汉字（输入框、结果卡片大字、繁体/异体字、字表浏览、级别统计）与界面文字共用**同一套字体**，避免同一个字在不同位置、或字与字之间显示成不同字体。
 
 CSS 变量 `--han` 统一管理，优先使用**霞鹜文楷**：
@@ -141,12 +160,14 @@ CSS 变量 `--han` 统一管理，优先使用**霞鹜文楷**：
 public/                 纯静态站点（可直接托管；双击 index.html 也能用）
   index.html            汉字表查询页
   data/api-data.js      字表数据（8105 条，由构建脚本生成）
+  fonts/*.woff2         霞鹜文楷子集（自托管，无需读者本机安装）
   rules.html            GB/T 7714—2025 速查页
   cyt266.html           CY/T 266—2023 速查页
   cyt121.html           CY/T 121—2015 速查页
 docs/                   发布目录：public/ 的副本 + .nojekyll（GitHub Pages 用，由 npm run build 生成）
 lib/query.js            查询核心：数据加载、索引、检索（供构建脚本与测试使用）
 scripts/build-static.js 生成字表数据文件 public/data/api-data.js
+scripts/build-fonts.py  子集化霞鹜文楷并生成 public/fonts/*.woff2（需要本机已装该字体）
 scripts/build-site.js   一键构建：生成数据 + 复制到 docs/
 scripts/fetch-data.js   取数脚本：下载原始数据并生成 data/dataset.json
 data/dataset.json       源数据（8105 条，约 628 KB）
