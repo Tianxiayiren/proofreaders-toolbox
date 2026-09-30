@@ -272,6 +272,54 @@
     .search .char-input { height: 70px; width: 70px; font-size: 32px; }
     .glyph { width: 68px; height: 68px; font-size: 42px; }
   }
+
+  /* ===== 小屏与通用健壮性 =====
+     1) flex/grid 子项默认 min-width:auto，遇到不可断的长串（如 URL）会拒绝收缩，
+        从而把页面撑宽。统一允许收缩，并对长串允许任意位置折行。
+     2) 表格统一由 .scroll-x 容器横向滚动（wrap 那类表格自身不撑破页面）。 */
+  .content :is(div, section, p, li, td, th, span) { min-width: 0; }
+  :is(.eg, .eg .tx, .note, .notes > div, .term, .clause, .kv > div,
+      .stdlist > div, .reflist > div, .brand-nav a, .brand .name, .toc-head) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .egs, .stdlist, .reflist, .termlist { grid-template-columns: minmax(0, 1fr); }
+  table { max-width: 100%; }
+  img, svg, video { max-width: 100%; height: auto; }
+
+  @media (max-width: 700px) {
+    /* 手机上适当收紧留白，给正文更多宽度 */
+    .wrap { padding-left: 12px; padding-right: 12px; }
+    .panel { padding: 14px 13px; }
+    .brand .cn { font-size: 17px; }
+    .brand .en { font-size: 11.5px; }
+    header h1 { font-size: 19px; }
+    header .sub { font-size: 12.5px; }
+    table { font-size: 12.5px; }
+    th, td { padding: 6px 7px; }
+    .eg { padding: 7px 8px; }
+    .eg .tx { font-size: 12.5px; }
+    .toc-filter { height: 34px; }
+  }
+
+  @media (max-width: 420px) {
+    .brand { gap: 8px; }
+    .brand-nav { gap: 6px; }
+    .brand-nav a { padding: 5px 9px; font-size: 12px; }
+  }
+
+  @media (max-width: 700px) {
+    /* 触控目标：手机上把按钮/胶囊/标签页抬到易点的高度（原 25–28px 偏小） */
+    .btn, .ghost, .chip, .tab, .lvl-card, .brand-nav a, .toc-toggle, .rel-char {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chip, .rel-char { min-width: 40px; }
+    .cell { min-height: 36px; }
+    .history .chip { min-height: 38px; }
+  }
 </style>
 <!-- 静态部署支持：需 data/api-data.js 已加载，故置于其后。
        该文件不存在（例如只跑 node server.js）时，此处不做任何事，页面走真实接口。 -->
