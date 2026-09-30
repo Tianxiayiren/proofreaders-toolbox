@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编校工具箱 Proofreader&#39;s Toolbox · CY/T 121—2015 学术出版规范 注释</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --ink: #1f2329; --ink-2: #646a73; --ink-3: #8f959e;
+    --line: #e4e6eb; --l1: #3370ff; --l1-bg: #eef4ff; --l2: #0f9d8c; --l2-bg: #e8f8f6;
+    --danger: #d83931; --radius: 12px; --shadow: 0 2px 10px rgba(31,35,41,.06);
+    /* 与「编校工具箱」其余页面保持一致的汉字字体；全站不使用等宽字体 */
+    --han: "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
+           "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Source Han Sans SC",
+           "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--han); -webkit-font-smoothing: antialiased; }
+  a { color: var(--l1); }
+
+  /* 版式：左侧固定目录 + 右侧正文（窄屏折成顶部按钮） */
+  .wrap {
+    max-width: 1240px; margin: 0 auto; padding: 22px 20px 72px;
+    display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: 22px; align-items: start;
+  }
+  .sidebar { position: sticky; top: 22px; }
+  .content { min-width: 0; }
+  .toc {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 12px 10px; max-height: calc(100vh - 44px);
+    display: flex; flex-direction: column;
+  }
+  .toc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .toc-head .t { font-size: 13px; font-weight: 600; }
+  .toc-head .c { font-size: 11.5px; color: var(--ink-3); }
+  .toc-filter {
+    width: 100%; height: 30px; margin: 8px 0 8px; padding: 0 9px;
+    font-family: var(--han); font-size: 12.5px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px; background: #fafbfc; outline: none;
+  }
+  .toc-filter:focus { border-color: var(--l1); background: #fff; }
+  .toc-list { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; display: flex; flex-direction: column; }
+  .toc-wrap { display: flex; flex-direction: column; }
+  .toc-link {
+    display: block; text-decoration: none; color: var(--ink-2);
+    font-size: 12.5px; padding: 3px 7px; border-radius: 6px;
+    border-left: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .toc-link:hover { background: #fafbfc; color: var(--l1); }
+  .toc-link.lv3 { padding-left: 16px; font-size: 12px; color: var(--ink-3); }
+  .toc-link.lv4 { padding-left: 28px; font-size: 12px; color: var(--ink-3); }
+  .toc-link.lv5 { padding-left: 40px; font-size: 11.5px; color: var(--ink-3); }
+  .toc-link.cur { background: var(--l1-bg); color: var(--l1); border-left-color: var(--l1); font-weight: 600; }
+  .toc-empty { font-size: 12px; color: var(--ink-3); padding: 6px 7px; }
+  .toc-toggle { display: none; border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+    border-radius: 999px; padding: 4px 11px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+
+  /* 应用品牌区：与另两页共用 */
+  .brand {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .brand .name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .brand .cn { font-size: 19px; font-weight: 700; letter-spacing: .5px; color: var(--l1); }
+  .brand .en { font-size: 12.5px; color: var(--ink-3); letter-spacing: .3px; }
+  .brand-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .brand-nav a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--ink-2); text-decoration: none;
+    border: 1px solid var(--line); background: #fff;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .brand-nav a:hover { border-color: var(--l1); color: var(--l1); }
+  .brand-nav a[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  header h1 { font-size: 23px; margin: 0 0 8px; letter-spacing: .3px; }
+  header .sub { color: var(--ink-2); font-size: 13.5px; margin: 0; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 20px; margin-top: 16px;
+  }
+  .panel > h2 { font-size: 16px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .panel > h2 .no { font-size: 12.5px; font-weight: 600; color: var(--l1); background: var(--l1-bg);
+    border-radius: 6px; padding: 1px 7px; }
+  .panel > h2 .tag { font-size: 11.5px; font-weight: 500; color: var(--ink-3);
+    border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+  .panel h3 { font-size: 14px; margin: 16px 0 8px; }
+  .kv { font-size: 13.5px; }
+  .kv div { display: flex; gap: 10px; margin: 3px 0; }
+  .kv .k { flex: 0 0 96px; color: var(--ink-3); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafbfc; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .scroll-x { overflow-x: auto; }
+  /* 条文段落 */
+  .clause p { margin: 6px 0; font-size: 13.5px; }
+  /* 术语条目 */
+  .termlist { display: grid; gap: 10px; margin-top: 10px; }
+  .term { border-left: 3px solid var(--l1-bg); padding: 2px 0 2px 12px; }
+  .term-no { font-size: 12px; color: var(--ink-3); }
+  .term-name { font-size: 14.5px; font-weight: 600; margin: 2px 0 4px; }
+  .term-en { font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+  .term p { margin: 4px 0; font-size: 13.5px; }
+  .term-note { font-size: 12.5px; color: var(--ink-2); background: #fafbfc; border-radius: 6px; padding: 5px 9px; margin-top: 5px; }
+  .term-src { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; }
+
+  /* 条款小块（如 4.1.1） */
+  .clause { margin: 10px 0 0; }
+  .clause.sub { margin: 8px 0 0 8px; padding-left: 10px; border-left: 2px solid var(--line); }
+  .clause .t { font-size: 12.5px; color: var(--l1); font-weight: 600; }
+  .clause p { margin: 3px 0 0; font-size: 13.5px; }
+
+  /* 规范性引用文件清单 */
+  .stdlist { display: grid; gap: 2px; margin-top: 8px; font-size: 13.5px; }
+  .stdlist > div { display: flex; gap: 12px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .stdlist > div:last-child { border-bottom: 0; }
+  .stdlist .stdno { flex: 0 0 116px; color: var(--l1); font-weight: 600; }
+
+  .notes { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-2); }
+  .sub-sub { font-size: 13px; margin: 11px 0 5px; color: var(--ink-2); font-weight: 600; }
+  .sub-h { font-size: 13.5px; margin: 14px 0 6px; color: var(--ink); font-weight: 600; }
+
+  .mono { font-family: var(--han); background: #f4f5f7; border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+
+  /* 示例 */
+  .egs { margin: 8px 0 0; display: grid; gap: 5px; }
+  .eg { display: flex; gap: 8px; align-items: baseline; background: #fafbfc; border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; }
+  .eg .lb { flex: 0 0 auto; font-size: 12px; color: var(--ink-3); }
+  .eg .tx { font-size: 13px; }
+
+  /* 参考文献列表 */
+  .reflist { display: grid; gap: 3px; font-size: 13.5px; }
+  .reflist > div { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .reflist > div:last-child { border-bottom: 0; }
+  .reflist .refno { flex: 0 0 30px; color: var(--l1); font-weight: 600; }
+
+  /* 待填区与待填单元格 */
+  .todo-box {
+    border: 1px dashed var(--line); background: #fafbfc; border-radius: 8px;
+    padding: 12px 14px; font-size: 13px; color: var(--ink-3);
+  }
+  .todo-cell { color: var(--ink-3); font-size: 13px; text-align: center; padding: 18px 10px; }
+
+  footer { margin-top: 26px; color: var(--ink-3); font-size: 12px; line-height: 1.9; }
+  @media (max-width: 560px) {
+    .kv div { flex-direction: column; gap: 0; }
+    .toc-filter { font-size: 16px; }
+  }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; padding: 16px 14px 56px; gap: 12px; }
+    .sidebar { position: static; }
+    .toc { max-height: none; }
+    .toc-toggle { display: inline-flex; }
+    body:not(.toc-open) .toc-list { display: none; }
+    body:not(.toc-open) .toc-filter { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <aside class="sidebar">
+    <nav class="toc" aria-label="目录">
+      <div class="toc-head">
+        <span class="t">目录</span>
+        <button class="toc-toggle" type="button" id="tocToggle">展开/收起</button>
+        <span class="c" id="tocCount"></span>
+      </div>
+      <input class="toc-filter" id="tocFilter" type="search" placeholder="筛选条目…" aria-label="筛选目录">
+      <div class="toc-list" id="tocList"></div>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+  <div class="brand">
+    <div class="name">
+      <span class="cn">编校工具箱</span>
+      <span class="en">Proofreader&rsquo;s Toolbox</span>
+    </div>
+    <nav class="brand-nav">
+      <a href="index.html">汉字表查询</a>
+      <a href="rules.html">GB/T 7714—2025</a>
+      <a href="cyt266.html">CY/T 266—2023</a>
+      <a href="cyt121.html" aria-current="page">CY/T 121—2015</a>
+    </nav>
+  </div>
+
+  <header>
+    <h1>CY/T 121—2015《学术出版规范　注释》速查</h1>
+  </header>
+
+  <section class="panel" id="sec-meta">
+    <h2><span class="no">标准信息</span>CY/T 121—2015 <span class="tag">已核实内容</span></h2>
+    <div class="kv" style="margin-top:10px">
+      <div><span class="k">标准编号</span><span>CY/T 121—2015《学术出版规范　注释》</span></div>
+      <div><span class="k">英文名称</span><span>Academic publishing specification—Notes</span></div>
+      <div><span class="k">发布日期</span><span>2015-01-29</span></div>
+      <div><span class="k">实施日期</span><span>2015-01-29</span></div>
+      <div><span class="k">发布机构</span><span>国家新闻出版广电总局</span></div>
+      <div><span class="k">标准性质</span><span>新闻出版行业标准（CY/T），推荐性</span></div>
+      <div><span class="k">归口单位</span><span>全国新闻出版标准化技术委员会（SAC/TC 527）</span></div>
+      <div><span class="k">起草单位</span><span>社会科学文献出版社、中国新闻出版研究院</span></div>
+      <div><span class="k">主要起草人</span><span>谢寿光、童根兴、高传杰、傅祚华、李旗、张书卿</span></div>
+      <div><span class="k">ICS 分类号</span><span>01.140.40</span></div>
+      <div><span class="k">中标分类号</span><span>A19</span></div>
+      <div><span class="k">起草依据</span><span>按照 GB/T 1.1—2009 给出的规则起草</span></div>
+      <div><span class="k">同系列标准</span><span>CY/T 119 科学技术名词、CY/T 122 引文、CY/T 123 中文译著 等（学术出版规范系列）</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-1">
+    <h2><span class="no">1</span>范围</h2>
+    <div class="clause">
+      <p>本标准规定了学术出版物注释的类型、体例以及编排原则。</p>
+      <p>本标准适用于学术专著的编纂出版，期刊、论文、研究报告可参照使用。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-2">
+    <h2><span class="no">2</span>规范性引用文件</h2>
+    <div class="clause">
+      <p>下列文件对于本文件的应用是必不可少的。凡是注日期的引用文件，仅注日期的版本适用于本文件。凡是不注日期的引用文件，其最新版本（包括所有的修改单）适用于本文件。</p>
+    </div>
+    <div class="stdlist">
+      <div><span class="stdno">GB/T 7714</span><span>文后参考文献著录规则</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-3">
+    <h2><span class="no">3</span>术语和定义</h2>
+    <p class="lead" style="color:var(--ink-2);font-size:13.5px">下列术语和定义适用于本文件。</p>
+    <div class="termlist">
+        <div class="term">
+          <div class="term-no">3.1</div>
+          <div class="term-name">注释 <span class="term-en">annotation/note</span></div>
+          <p>对学术作品的某些内容所作的说明。</p>
+          <div class="term-note">注：改写 CY/T 50—2008，定义 3.91。</div>
+        </div>
+        <div class="term">
+          <div class="term-no">3.2</div>
+          <div class="term-name">脚注 <span class="term-en">footnote</span></div>
+          <p>置于同页末的注释。</p>
+          <div class="term-note">注：改写 CY/T 50—2008，3.89。</div>
+        </div>
+        <div class="term">
+          <div class="term-no">3.3</div>
+          <div class="term-name">尾注　文后注</div>
+          <p>置于本篇文章后面的注释。</p>
+          <div class="term-src">[CY/T 50—2008，3.90]</div>
+        </div>
+        <div class="term">
+          <div class="term-no">3.4</div>
+          <div class="term-name">夹注 <span class="term-en">interlinear note</span></div>
+          <p>置于行文中的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.5</div>
+          <div class="term-name">边注　旁注 <span class="term-en">marginal note / side note</span></div>
+          <p>置于版心一侧的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.6</div>
+          <div class="term-name">出处注 <span class="term-en">source note</span></div>
+          <p>标明正文中引用资料来源的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.7</div>
+          <div class="term-name">内容注 <span class="term-en">content note</span></div>
+          <p>对正文中相关内容进行解释、校订、补充和扩展的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.8</div>
+          <div class="term-name">作者注 <span class="term-en">annotate by author</span></div>
+          <p>著作中作者本人所加的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.9</div>
+          <div class="term-name">他人注 <span class="term-en">annotate by others</span></div>
+          <p>著作中作者之外的人所加的注释。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.10</div>
+          <div class="term-name">注释-编号制 <span class="term-en">Notes-Numeric System of citation</span></div>
+          <p>依序在引文处标示注码，以对应的脚注或尾注呈现引文出处信息的文献征引方式。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.11</div>
+          <div class="term-name">著者-出版年制 <span class="term-en">Author-Date System of citation</span></div>
+          <p>在引文处括注引文的著者、出版年，文后参考文献详列征引信息的文献征引方式。</p>
+        </div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-4">
+    <h2><span class="no">4</span>注释的分类</h2>
+<h3>4.1 按加注者</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1</span></div>
+        <p>按加注者可分为：作者注、他人注。</p>
+      </div>
+<h3>4.2 按注释的功能</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.2</span></div>
+        <p>按注释的功能可分为：出处注、内容注。</p>
+      </div>
+<h3>4.3 按注释的位置</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.3</span></div>
+        <p>按注释的位置可分为：脚注、尾注、夹注、边注、图注和表注等。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-5">
+    <h2><span class="no">5</span>注释的要求</h2>
+<h3>5.1 作者注</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.1</span></div>
+        <p>篇幅简短或与正文衔接紧密的作者注可用夹注。</p>
+      </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">16-17世纪，西方向东方扩张，东方世界被按照离世界中心——西欧的远近划分为近东（地中海到波斯湾）、中东（波斯湾到东南亚）、远东（太平洋地区东亚和东南亚国家）。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">实践证明，以低碳水化合物、高脂肪饮食为主的饮食结构对糖尿病患者的胰岛功能并无益处。故，当前中外医学专家均认为提高碳水化合物，降低脂肪比例的饮食结构，对改善糖尿病患者血糖耐量有较好的结果。这是观念的更新。（但，“提高碳水化合物”系指适当提高多糖含量，并非随意食用单糖或双糖类食物。）</span></div>
+    </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.2</span></div>
+        <p>内容较多且与正文衔接不紧密，宜用脚注或尾注。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.3</span></div>
+        <p>若作品有多位作者并各自加注，应加说明。</p>
+      </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">Agape 一词，也可译为“神爱”或者“慈爱”。——作者1<br>“智者运动”引发了对大多数人所接受信仰的怀疑情绪。——作者2</span></div>
+    </div>
+<h3>5.2 他人注</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.2.1</span></div>
+        <p>应在注文结束后加破折号和注释者。注释者后不加句号。</p>
+      </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">托比·胡佛认为，从8世纪末到14世纪末，阿拉伯科学很可能是世界上最先进的科学，远远超过了西方和中国。——编者</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">“他”指查理·罗伯特·达尔文，英国博物学家，进化论奠基人。——引者</span></div>
+    </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.2.2</span></div>
+        <p>他人注较多而作者注较少时，可对作者注进行标识，或另加说明。</p>
+      </div>
+<h3>5.3 脚注</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.1</span></div>
+        <p>脚注置于本页底部，与正文用脚注线隔开；按正文中出现的先后顺序排列；脚注线的长度应为版心的1/4。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.2</span></div>
+        <p>脚注单列时应缩进两格起排，转行顶格，句末加句号。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.3</span></div>
+        <p>脚注注码宜全书统编或每面单独编排。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.4</span></div>
+        <p>注码编号与正文中的注码编号应一致。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.5</span></div>
+        <p>注文字号应小于正文字号。</p>
+      </div>
+<h3>5.4 尾注</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.4.1</span></div>
+        <p>尾注应在注的上方加排“注释”字样。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.4.2</span></div>
+        <p>各条尾注单列时应缩进两格起排，转行顶格，句末加句号。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.4.3</span></div>
+        <p>注码按被注文字出现的先后顺序编号，篇、章、节后注的注码应每篇、章、节连续排序，置于篇、章、节后，或统一置于书末；书末注的注码宜全书连续编排。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.4.4</span></div>
+        <p>注码编号与正文中的注码编号应一致。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.4.5</span></div>
+        <p>注文字号应小于正文字号。</p>
+      </div>
+<h3>5.5 夹注</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.5.1</span></div>
+        <p>注文应紧接被注文字。</p>
+      </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">为了界定什么样的国家才能承担起这样的任务，学者又进一步提出了“嵌入性自主”（embedded autonomy）和“约束性自主”（bounded autonomy）等概念（Evans,1995;Zhao and Hall,1994）。</span></div>
+    </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.5.2</span></div>
+        <p>注文应置于圆括号内；注文本身有圆括号时应将其改为方括号。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.5.3</span></div>
+        <p>被注事项为完整句，注文放在句号后；若注文为完整句，注文后应加句号。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.5.4</span></div>
+        <p>被注事项为非完整句，注文句末（后括号前）不加标点，省略号、叹号、问号除外。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.5.5</span></div>
+        <p>注文可以是一个自然段或几个自然段，都用一对括号标明起止。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-6">
+    <h2><span class="no">6</span>注码的形式及要求</h2>
+      <div class="clause sub">
+        <div class="t"><span class="no">6.1</span></div>
+        <p>注码可使用阿拉伯数字、汉字、字母或符号序号等。</p>
+      </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">1,2,3……</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">① ② ③……</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[一][二][三]……</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[1][2][3]……</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">a,b,c,d……</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">I，II，III……</span></div>
+      <div class="eg"><span class="lb">示例 7</span><span class="tx">,,……</span></div>
+    </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">6.2</span></div>
+        <p>文中的注码应紧跟被注文字，用右上角标标注。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">6.3</span></div>
+        <p>对某一章节或者篇章的出处、作者进行说明时，宜用*作为注码，通常排在数字注码前。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-7">
+    <h2><span class="no">7</span>出处注的形式及要求</h2>
+      <div class="clause sub">
+        <div class="t"><span class="no">7.1</span></div>
+        <p>出处注分为顺序编码制（参见 GB/T 7714）、注释-编号制（参见附录 A）和著者-出版年制（参见附录 B）三种形式。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">7.2</span></div>
+        <p>出处注应确保准确、完整、统一，同一出版物应采用一种出处注格式。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-annexA">
+    <h2><span class="no">附录 A</span>注释-编号制及其出处注著录格式示例 <span class="tag">资料性附录</span></h2>
+<h3>A.1 注释-编号制下的出处注</h3>
+    <div class="clause"><p>该形式下的出处注有以下特点：</p></div>
+      <div class="clause sub"><p><b>a)</b> 位置在脚注或尾注中，表注、图注中的出处注可同此例，编号规则同脚注或尾注的规定。</p></div>
+      <div class="clause sub"><p><b>b)</b> 同种文献首次出现时各项信息应齐全。</p></div>
+      <div class="clause sub"><p><b>c)</b> 文献各项信息同 GB/T 7714-2005 4.。</p></div>
+      <div class="clause sub"><p><b>d)</b> 同种文献再次出现时，可省略若干信息。</p></div>
+      <div class="clause sub"><p><b>e)</b> 文字同 GB/T 7714-2005 6.。</p></div>
+      <div class="clause sub"><p><b>f)</b> 文献各项信息用该文献本身的标点符号标识。中文文献题名应用书名号；英文书名、刊物名、报纸名用斜体，文章名、未刊博士论文等用双引号；各项信息之间用逗号相隔。</p></div>
+<h3>A.2 引用文献初次出现时著录格式示例</h3>
+<h4 class="sub-h">A.2.1 专著</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">周雪光：《组织社会学十讲》，社会科学文献出版社，2003，第216页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">管健：《身份污名与认同融合——城市代际移民的社会表征研究》，社会科学文献出版社，2012，第185页。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">李培林、陈光金、张翼、李炜：《中国社会和谐稳定报告》，社会科学文献出版社，2008，第197页。</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">Stewart Banner, <i>How the Indians Lost Their Land: Law and Power on the Frontier</i> (Cambridge: Harvard University Press, 2005), p. 89.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">Geoffrey C. Ward and Ken Burns, <i>The War: An Intimate History, 1941-1945</i> (New York: Knopf, 2007), pp. 52-53.</span></div>
+    </div>
+<h4 class="sub-h">A.2.2 主编作品</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">陆学艺主编《当代中国社会结构》，社会科学文献出版社，2010，第109页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Robert J. Beck, Anthony Clark Arend and Robert D. Vander Lugt (eds.), <i>International Rules: Approaches from International Law and International Relations</i> (New York: Oxford University Press, 1996).</span></div>
+    </div>
+<h4 class="sub-h">A.2.3 译著</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">Gabriel García Márquez, <i>Love in the Time of Cholera</i>, trans. Edith Grossman (London: Cape, 1988), pp. 242-255.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">马克斯·韦伯：《新教伦理与资本主义精神（罗克斯伯里第三版）》，斯蒂芬·卡尔伯格英译，苏国勋、覃方明、赵立玮、秦明瑞中译，社会科学文献出版社，2010，第79-80页。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">Richmond Lattimore trans/eds., <i>The Iliad of Homer</i> (Chicago: University of Chicago Press, 1951).</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">皮埃尔·布迪厄、华康德：《实践与反思：反思社会学导引》，李猛、李康译，中央编译出版社，2004。</span></div>
+    </div>
+<h4 class="sub-h">A.2.4 章、节或者文集中的文章</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">黄源盛：《民初大理院民事审判法源问题再探》，载李贵连主编《近代法研究》第1辑，北京大学出版社，2007，第5页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Glenn Gould, “Streisand as Schwarzkopf,” in <i>The Glenn Gould Reader</i>, ed. Tim Page (New York: Vintage, 1984), p. 310.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">乔启明：《中国农民生活程度之研究》，载《乔启明文选》，社会科学文献出版社，2012，第340页。</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">方文：《中国宗教与民间信仰》，载李培林、李强、马戎主编《社会学与中国社会》，社会科学文献出版社，2008，第477页。</span></div>
+    </div>
+<h4 class="sub-h">A.2.5 前言、导言，与该书非同一作者</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">苏国勋：《新教伦理与资本主义精神·中文新译本序言》，载马克斯·韦伯《新教伦理与资本主义精神（罗克斯伯里第三版）》，苏国勋、覃方明、赵立玮、秦明瑞译，社会科学文献出版社，2010，《中文新译本序言》第6页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">James Rieger, introduction to <i>Frankenstein; or, The Modern Prometheus</i>, by Mary Wollstonecraft Shelley (Chicago: University of Chicago Press, 1982), pp. xx-xxi.</span></div>
+    </div>
+<h4 class="sub-h">A.2.6 期刊文章</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">李培林、李炜：《农民工在中国转型中的经济地位和社会态度》，《社会学研究》2007年第3期。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">林建成：《试论陕甘宁边区的历史地位及其作用》，《民国档案》1997年第3期。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">Walter Blair, “Americanized Comic Braggarts,” <i>Critical Inquiry</i> 4, no. 2 (1977): 331-32.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">Andrew G. Walder, “Markets and Inequality in Transitional Economies: Toward Testable Theories,” <i>American Journal of Sociology</i> 101, no. 4 (Jan. 1996): 1060-1073.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">Joshua I. Weinstein, “The Market in Plato’s Republic,” <i>Classical Philology</i> 104 (2009): 440.</span></div>
+    </div>
+<h4 class="sub-h">A.2.7 数字出版物、网页文章等</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">王巍：《夏鼐先生与中国考古学》，《考古》2010年第2期，http://mall.cnki.net/magazine/Article/KAGU201002007.htm，访问日期：2012年6月3日。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">邱巍：《吴兴钱氏家族研究》，浙江大学博士论文，2005，第19页。据中国优秀博硕士学位论文全文数据库：http://ckrd.cnki.net/grid20/Navigator.aspxID=2。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">Sheryl Gay Stolberg and Robert Pear, “Wary Centrists Posing Challenge in Health Care Vote,” <i>New York Times</i>, February 27, 2010, accessed February 28, 2010, http://www.nytimes.com/2010/02/28/us/politics/28health.html.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">“Google Privacy Policy,” last modified March 11, 2009, http://www.google.com/intl/en/privacyolicy.html.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">“McDonald’s Happy Meal Toy Safety Facts,” McDonald’s Corporation, accessed July 19, 2008, http://www.mcdonalds.com/corp/about/factsheets.html.</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">Gueorgi Kossinets and Duncan J. Watts, “Origins of Homophily in an Evolving Social Network,” <i>American Journal of Sociology</i> 115 (2009): 411, accessed February 28, 2010, doi: 10.1086/599247.</span></div>
+      <div class="eg"><span class="lb">示例 7</span><span class="tx">Jane Austen, <i>Pride and Prejudice</i> (New York: Penguin Classics, 2007), Kindle edition.</span></div>
+    </div>
+<h4 class="sub-h">A.2.8 报纸和大众杂志中的文章</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">鲁佛民：《对边区司法工作的几点意见》，《解放日报》1941年11月15日第3版。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Daniel Mendelsohn, “But Enough about Me,” <i>New Yorker</i>, January 25, 2010, p.68.</span></div>
+    </div>
+<h4 class="sub-h">A.2.9 学位论文</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">陈默：《抗战时期国军的战区一集团军体系研究》，博士学位论文，北京大学历史学系，2012，第134页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Mihwa Choi, “Contesting Imaginaires in Death Rituals during the Northern Song Dynasty” (PhD diss., University of Chicago, 2008).</span></div>
+    </div>
+<h4 class="sub-h">A.2.10 会议论文</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">马勇：《王爷纷争：观察义和团战争起源的一个视角》，政治精英与近代中国国际学术研究会会议论文，杭州，2012，第9页。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Rachel Adelman, “ ‘Such Stuff as Dreams Are Made On’ : God's Footstool in the Aramaic Targumim and Midrashic Tradition” (paper presented at the annual meeting for the Society of Biblical Literature, New Orleans, Louisiana, November 21-24, 2009).</span></div>
+    </div>
+<h4 class="sub-h">A.2.11 档案文献</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">雷经天：《关于边区司法工作检查情形》（1943年9月3日），陕西省档案馆藏陕甘宁边区高等法院档案，档案号：15/149。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">James Oglethorpe to the Trustees, 13 January 1733, Phillipps Collection of Egmont Manuscripts, 14200: 13, University of Georgia Library.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">Alvin Johnson, memorandum, 1937, file 36, Horace Kallen Papers, YIVO Institute for Jewish Research, New York.</span></div>
+    </div>
+<h4 class="sub-h">A.2.12 古籍</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">张金吾编《金文最》卷一一，光绪十七年江苏书局刻本，第18页b。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">苏天爵辑《元朝名臣事略》卷一三《廉访使杨文宪公》，姚景安点校，中华书局，1996，第257—258页。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">杨钟羲：《雪桥诗话续集》卷五上册，辽沈书社，1991，影印本，第461页下栏。</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">民国《上海县续志》卷一《疆域》，第10页b。</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">同治《鄞县志》卷四《炎陵》，收入《中国地方志集成·湖南府县志辑》第18册，江苏古籍出版社，2002，影印本，第405页。</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">《清太祖高皇帝实录》卷一〇，天命十一年正月己酉，中华书局，1986年影印本。</span></div>
+    </div>
+<h4 class="sub-h">A.2.13 转引文献</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">章太炎：《在长沙晨光学校演说》（1925年10月），转引自汤志钧《章太炎编年长编》下册，中华书局，1979，第823页。</span></div>
+    </div>
+<h4 class="sub-h">A.3 引用文献再次出现时著录格式示例</h4>
+    <div class="clause sub">
+      <p>A.3.1 文献初次引用要确保各项内容齐全，隔页或隔几页再次引用可省略责任方式、副标题、出版项等信息。</p>
+    </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">Michael Pollan, <i>The Omnivore’s Dilemma: A Natural History of Four Meals</i> (New York: Penguin, 2006), pp.99-100. 20. Pollan, <i>The Omnivore’s Dilemma</i>, p.3.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">1. 基思·谢德维克：《吉尼斯古典音乐大师》，汪启璋、沈旋等译，上海辞书出版社，2001，第 10 页。<br>30. 谢德维克：《吉尼斯古典音乐大师》，第 11 页。</span></div>
+    </div>
+    <div class="clause sub">
+      <p>A.3.2 同一页所引文献相同且注释顺序相邻时，责任者、书名可省略为“同上书”；同一页所引文献相同、页码相同且注释顺序相邻时，责任者、书名、页码可省略为“同上”。</p>
+    </div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">1. 李培林等：《当代中国民生》，社会科学文献出版社，2010，第183页。</span></div>
+      <div class="eg"><span class="lb">示例</span><span class="tx">2. 同上。</span></div>
+      <div class="eg"><span class="lb">示例</span><span class="tx">3. 同上书，第214页。</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-annexB">
+    <h2><span class="no">附录 B</span>著者-出版年制及其出处注著录格式示例 <span class="tag">资料性附录</span></h2>
+<h3>B.1 著者-出版年制下的出处注</h3>
+    <div class="clause"><p>该形式下的出处注有以下特点：</p></div>
+      <div class="clause sub"><p><b>a)</b> 在正文中以夹注的方式出现，位置可在正文、脚注或尾注、图注、表注中。</p></div>
+      <div class="clause sub"><p><b>b)</b> 在文中的规则同夹注的规定。</p></div>
+      <div class="clause sub"><p><b>c)</b> 文中夹注中一般出现作者、出版年信息，页码信息视引用范围而定。</p></div>
+      <div class="clause sub"><p><b>d)</b> 中文作者信息一般全列，外国作者信息只列姓。</p></div>
+      <div class="clause sub"><p><b>e)</b> 作者信息的拼写应同原文献，应具可读性。</p></div>
+      <div class="clause sub"><p><b>f)</b> 文后参考文献列出引用文献的全部信息，排列顺序同 GB/T 7714-2005 9.2，不编序号。</p></div>
+<h3>B.2 著者-出版年制下出处注基本形式示例</h3>
+    <div class="notes"><div>示例：</div></div>
+    <div class="clause sub">
+      <div class="t"><span class="no">【正文】</span></div>
+      <p>当农民在利益受到侵害时，他们常常既因为处于社会最底层而无从退出，又不甘心接受，却也畏于表达（Solomon,1971: 105-134），所以，他们的常规反应不是忽略、忍耐，就是所谓的投机或“日常的抵抗”（斯科特, 2007）。那么，农民为什么不时还会出现正面抗争这种非常规反应，有的时候甚至表现出法农（2005）所分析的那种激进、狂暴的行动倾向？……阶级小农、理性小农与道义小农这三条线索之间的颉颃始终就没有停息过，而这三方面又早已被黄宗智（2000）称为小农这个统一体中三种不同面貌。</p>
+    </div>
+    <div class="clause"><p><b>【文后参考文献】</b></p></div>
+    <div class="egs">
+      <div class="eg"><span class="lb"></span><span class="tx">法农，弗朗兹，2005，《全世界受苦的人》，万冰译，南京：译林出版社。</span></div>
+      <div class="eg"><span class="lb"></span><span class="tx">黄宗智，2000，《华北的小农经济与社会变迁》，北京：中华书局。</span></div>
+      <div class="eg"><span class="lb"></span><span class="tx">斯科特，詹姆斯·C，2007，《弱者的武器——农民反抗的日常形式》，郑广怀等译，南京：译林出版社。</span></div>
+      <div class="eg"><span class="lb"></span><span class="tx">Solomon, R. 1971. <i>Mao's Revolution and the Chinese Political Culture</i>. Berkeley: University of California Press.</span></div>
+    </div>
+<h3>B.3 文内细则示例</h3>
+<h4 class="sub-h">B.3.1 作品</h4>
+<h5 class="sub-sub">B.3.1.1 征引一部作品</h5>
+      <div class="clause sub"><p><b>a)</b> 一个作者时，列出作者和出版年份，中间用“，”隔开，如果有引用的具体页码，则页码和出版年之间用“：”隔开。</p></div>
+      <div class="clause sub"><p><b>b)</b> 两个作者时，中文作品作者之间用“、”隔开，英文作者之间用“and”相连。</p></div>
+      <div class="clause sub"><p><b>c)</b> 三个作者时，中文作品的作者与作者之间用“、”隔开，英文前两个作者之间用“，”隔开，后两个作者之间用“，and”隔开。</p></div>
+      <div class="clause sub"><p><b>d)</b> 三个以上作者时，可以缩写，格式为第一个作者加“等”（英文为 et al.）。</p></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">（赵鼎新，2006：3）</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">（王晓毅、渠敬东，2009）</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">（李培林等，2008）</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">（布迪厄、华康德，2004：39）</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">（Pollan, 2006: 99-100）</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">（Kossinets and Watts, 2009: 411）</span></div>
+      <div class="eg"><span class="lb">示例 7</span><span class="tx">（Halsey, Health, and Ridge, 1980 ）</span></div>
+    </div>
+<h5 class="sub-sub">B.3.1.2 征引同一作者两部及以上作品</h5>
+      <div class="clause sub"><p><b>a)</b> 不同年份作品。</p></div>
+      <div class="clause sub"><p>无具体的参考页码，不同著作的出版年之间用“，”隔开。</p></div>
+      <div class="clause sub"><p><span class="mono">（责任者，年份1，年份2）</span></p></div>
+      <div class="clause sub"><p>有具体的参考页码，不同著作之间用“；”隔开。</p></div>
+      <div class="clause sub"><p><span class="mono">（责任者，年份1：页码；年份2）</span></p></div>
+      <div class="clause sub"><p><b>b)</b> 同一年份作品。</p></div>
+      <div class="clause sub"><p>引用同一作者同一年份多部作品时，用 a,b,c……附在年份后，加以区别。参考文献中的年份后同样有对应的 a,b,c。</p></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">（李培林，1996，1998）</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">（李培林，2001：25；2002）</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">（李培林，2010a，2010b，2011）</span></div>
+    </div>
+<h5 class="sub-sub">B.3.1.3 征引不同作者的不同文献</h5>
+      <div class="clause sub"><p>征引不同作者的不同文献，不同文献之间用“；”隔开。</p></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">（McCarthy and Zald, 1973, 1977; Tilly, 1978; 塔罗, 2005; 麦克亚当等, 2006）</span></div>
+    </div>
+<h5 class="sub-sub">B.3.1.4 机构等作为责任者</h5>
+      <div class="clause sub"><p>在括号中标注机构的全名或者缩写。</p></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">(Google, 2009)</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">(McDonald's, 2008)</span></div>
+    </div>
+<h4 class="sub-h">B.3.2 责任方式（主编、编、译、编著）</h4>
+      <div class="clause sub"><p>责任方式信息在正文夹注中不必标出。在文献列表中，除“著”的信息可以省略外，其他信息都必须齐全。</p></div>
+<h4 class="sub-h">B.3.3 出版年份</h4>
+<h5 class="sub-sub">B.3.3.1 首版年份与引用年份，通常采用引用年份</h5>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">（林耀华，1989/1944）</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">（费孝通，1986/1939，1990/1943）</span></div>
+    </div>
+<h4 class="sub-h">B.3.4 未出版作品</h4>
+      <div class="clause sub"><p>基本格式为：<span class="mono">（李强，即将出版）</span></p></div>
+<h4 class="sub-h">B.3.5 转引作品</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">（转引自赫特尔，1988：45）。</span></div>
+    </div>
+<h3>B.4 著者-出版年制下书后文献著录格式示例</h3>
+<h4 class="sub-h">B.4.1 专著</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">梁漱溟，2006，《乡村建设理论》，上海人民出版社。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Pollan, Michael. 2006. <i>The Omnivore's Dilemma: A Natural History of Four Meals</i>. New York: Penguin.</span></div>
+    </div>
+<h4 class="sub-h">B.4.2 文集</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">高丙中，2000，《民间的仪式与国家的在场》，载郭于华主编《仪式与社会变迁》，社会科学文献出版社。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">张静，2000，《“雷格瑞事件”引出的知识论问题》，《清华社会学评论》第2辑，鹭江出版社。</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">Kelly, John D. 2010. “Seeing Red: Mao Fetishism, Pax Americana, and the Moral Economy of War.” In <i>Anthropology and Global Counterinsurgency</i>, edited by John D. Kelly, Beatrice Jauregui, Sean T. Mitchell, and Jeremy Walton, Chicago: University of Chicago Press.</span></div>
+    </div>
+<h4 class="sub-h">B.4.3 期刊</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">张其仔，1999，《社会网与基层经济生活》，《社会学研究》第3期。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Weinstein, Joshua I. 2009. “The Market in Plato's Republic.” <i>Classical Philology</i> 104: 439-458.</span></div>
+    </div>
+<h4 class="sub-h">B.4.4 报纸</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">鲁佛民,1941,《对边区司法工作的几点意见》，《解放日报》11月5日第3版。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Daily News.2008. “Small change”, 2 February, p. 7.</span></div>
+    </div>
+<h4 class="sub-h">B.4.5 会议论文</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">马勇，2012，《王爷纷争：观察义和团战争起源的一个视角》，“政治与精英与近代中国”国际学术研讨会会议论文，杭州。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Adelman, Rachel. 2009. “ ‘Such Stuff as Dreams Are Made On’ : God's Footstool in the Aramaic Targumim and Midrashic Tradition.” Paper presented at the annual meeting for the Society of Biblical Literature, New Orleans, Louisiana, November 21-24.</span></div>
+    </div>
+<h4 class="sub-h">B.4.6 学位论文</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">陈默，2012《抗战时期国军的战区一集团军体系研究》，博士学位论文，北京大学历史学系。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Choi, Mihwa. 2008. “Contesting Imaginaires in Death Rituals during the Northern Song Dynasty.” PhD diss., University of Chicago.</span></div>
+    </div>
+<h4 class="sub-h">B.4.7 网站、数据库等电子资源</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">邱巍，2005，《吴兴钱氏家族研究》，博士学位论文，浙江大学。据中国优秀博硕士学位论文全文数据库：http: //ckrd.cnki.net/grid20/Navigator.aspxID=2。</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">Kossinets, Gueorgi, and Duncan J. Watts. 2009. “Origins of Homophily in an Evolving Social Network.” <i>American Journal of Sociology</i> 115: 405-50. Accessed February 28, 2010. doi: 10.1086/599247.</span></div>
+    </div>
+<h4 class="sub-h">B.4.8 译著</h4>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例</span><span class="tx">韦伯，马克斯，2010，《新教伦理与资本主义精神（罗克斯伯里第三版）》，苏国勋、覃方明、赵立玮、秦明瑞译，社会科学文献出版社。</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-ref">
+    <h2><span class="no">参考文献</span></h2>
+    <div class="reflist">
+      <div><span class="refno">[1]</span><span>荣新江. 学术训练与学术规范——中国古代史研究入门. 北京：北京大学出版社，2011</span></div>
+      <div><span class="refno">[2]</span><span>汪继祥主编. 科学出版社作者编辑手册. 北京：科学出版社，2004</span></div>
+      <div><span class="refno">[3]</span><span>新闻出版总署科技发展司、新闻出版总署图书出版管理司、中国标准出版社编. 作者编辑常用标准及规范（第三版）. 北京：中国标准出版社，2011</span></div>
+      <div><span class="refno">[4]</span><span>The Chicago Manual of Style-the Essential Guide for Writers, Editors, and Publishers.The University of Chicago Press.2012</span></div>
+      <div><span class="refno">[5]</span><span>MLA Handbook for Writers of Research Papers,Seventh Edition. The Modern Language Association of America.2009</span></div>
+      <div><span class="refno">[6]</span><span>Publication Manual of the American Psychological Association,Sixth Edition.Amecican Psychological Association.2009</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <div><b>标准信息：</b>CY/T 121—2015《学术出版规范　注释》，2015-01-29 发布，2015-01-29 实施，国家新闻出版广电总局发布。</div>
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // 目录：从正文标题自动生成（面板 h2 = 分组标题，面板内 h3 = 下级条目）
+  const tocList = document.getElementById('tocList');
+  const tocFilter = document.getElementById('tocFilter');
+  const tocCount = document.getElementById('tocCount');
+  const tocToggle = document.getElementById('tocToggle');
+  if (!tocList) return;
+
+  function headingText(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.tag, .tag-done, .no').forEach((n) => n.remove());
+    return clone.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  function buildToc() {
+    const panels = [...document.querySelectorAll('section.panel')];
+    tocList.innerHTML = '';
+    const links = [];
+    let sections = 0;
+
+    panels.forEach((panel, pi) => {
+      const h2 = panel.querySelector('h2');
+      if (!h2) return;
+      const noEl = h2.querySelector('.no');
+      const no = noEl ? noEl.textContent.trim() : '';
+      if (!panel.id) panel.id = 'panel-' + (pi + 1);
+      const title = headingText(h2) || no || ('第 ' + (pi + 1) + ' 节');
+      const label = no && !title.startsWith(no) ? no + ' ' + title : title;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'toc-wrap';
+
+      const a = document.createElement('a');
+      a.className = 'toc-link lv2';
+      a.href = '#' + panel.id;
+      a.dataset.id = panel.id;
+      a.dataset.search = label.toLowerCase();
+      a.textContent = label;
+      a.title = label;
+      wrap.appendChild(a);
+      links.push(a);
+
+      [...panel.querySelectorAll('h3, h4.sub-h, h5.sub-sub')].forEach((sub, si) => {
+        const level = { H3: 3, H4: 4, H5: 5 }[sub.tagName] || 3;
+        const txt = headingText(sub);
+        if (!txt) return;
+        if (!sub.id) sub.id = panel.id + '-' + (si + 1);
+        const s = document.createElement('a');
+        s.className = 'toc-link lv' + level;
+        s.href = '#' + sub.id;
+        s.dataset.id = sub.id;
+        s.dataset.search = txt.toLowerCase();
+        s.textContent = txt;
+        s.title = txt;
+        wrap.appendChild(s);
+        links.push(s);
+      });
+
+      tocList.appendChild(wrap);
+      sections += 1;
+    });
+
+    tocCount.textContent = sections + ' 节 / ' + links.length + ' 条';
+    return links;
+  }
+
+  const tocLinks = buildToc();
+
+  // 滚动高亮
+  const byId = new Map(tocLinks.map((a) => [a.dataset.id, a]));
+  const targets = tocLinks.map((a) => document.getElementById(a.dataset.id)).filter(Boolean);
+  function highlight() {
+    let best = null;
+    for (const t of targets) {
+      if (t.getBoundingClientRect().top - 120 <= 0) best = t;
+      else break;
+    }
+    const id = best ? best.id : (targets[0] && targets[0].id);
+    tocLinks.forEach((a) => a.classList.toggle('cur', a.dataset.id === id));
+    const active = byId.get(id);
+    if (active && tocList.scrollHeight > tocList.clientHeight + 4) {
+      const r = active.getBoundingClientRect();
+      const lr = tocList.getBoundingClientRect();
+      if (r.top < lr.top || r.bottom > lr.bottom) active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { highlight(); ticking = false; });
+  }, { passive: true });
+  highlight();
+
+  // 筛选
+  function filter(term) {
+    const q = term.trim().toLowerCase();
+    let shown = 0;
+    tocLinks.forEach((a) => {
+      const hit = !q || a.dataset.search.includes(q);
+      a.style.display = hit ? '' : 'none';
+      if (hit) shown += 1;
+      const body = a.dataset.search.replace(/^[\d.\s\u9644\u5f55]+/, '');
+      a.style.order = !q ? '0' : (body.startsWith(q) ? '0' : '1');
+    });
+    [...tocList.querySelectorAll('.toc-wrap')].forEach((w) => {
+      const any = [...w.querySelectorAll('.toc-link')].some((a) => a.style.display !== 'none');
+      w.style.display = any ? '' : 'none';
+    });
+    tocCount.textContent = q ? '命中 ' + shown + ' 项' : '共 ' + shown + ' 条';
+    let empty = tocList.querySelector('.toc-empty');
+    if (!shown && q) {
+      if (!empty) { empty = document.createElement('div'); empty.className = 'toc-empty'; tocList.appendChild(empty); }
+      empty.textContent = '没有匹配的条目';
+      empty.style.display = '';
+    } else if (empty) {
+      empty.style.display = 'none';
+    }
+  }
+  tocFilter.addEventListener('input', () => filter(tocFilter.value));
+  tocList.addEventListener('click', (e) => {
+    if (e.target.closest('.toc-link') && window.matchMedia('(max-width: 900px)').matches) {
+      document.body.classList.remove('toc-open');
+    }
+  });
+  tocToggle.addEventListener('click', () => document.body.classList.toggle('toc-open'));
+  if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('toc-open');
+})();
+</script>
+</body>
+</html>

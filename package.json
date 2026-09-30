@@ -1,0 +1,16 @@
+{
+  "name": "proofreaders-toolbox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "编校工具箱：通用规范汉字表查询 + GB/T 7714—2025、CY/T 266—2023、CY/T 121—2015 速查（纯静态，可离线使用）",
+  "scripts": {
+    "build": "node scripts/build-site.js",
+    "data": "node scripts/build-static.js",
+    "fetch-data": "node scripts/fetch-data.js",
+    "test": "node --test \"tests/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

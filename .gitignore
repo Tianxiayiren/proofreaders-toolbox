@@ -1,0 +1,14 @@
+# 编辑器与系统杂项
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 依赖（本项目零依赖，正常不会出现）
+node_modules/
+
+# 临时文件
+*.tmp
+*.log
+.tmp*/

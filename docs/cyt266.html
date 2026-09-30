@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编校工具箱 Proofreader&#39;s Toolbox · CY/T 266—2023 图书编校质量差错判定和计算方法</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #ffffff; --ink: #1f2329; --ink-2: #646a73; --ink-3: #8f959e;
+    --line: #e4e6eb; --l1: #3370ff; --l1-bg: #eef4ff; --l2: #0f9d8c; --l2-bg: #e8f8f6;
+    --danger: #d83931; --radius: 12px; --shadow: 0 2px 10px rgba(31,35,41,.06);
+    /* 与「编校工具箱」其余页面保持一致的汉字字体；全站不使用等宽字体 */
+    --han: "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
+           "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Source Han Sans SC",
+           "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--han); -webkit-font-smoothing: antialiased; }
+  a { color: var(--l1); }
+
+  /* 版式：左侧固定目录 + 右侧正文（窄屏折成顶部按钮） */
+  .wrap {
+    max-width: 1240px; margin: 0 auto; padding: 22px 20px 72px;
+    display: grid; grid-template-columns: 252px minmax(0, 1fr); gap: 22px; align-items: start;
+  }
+  .sidebar { position: sticky; top: 22px; }
+  .content { min-width: 0; }
+  .toc {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 12px 10px; max-height: calc(100vh - 44px);
+    display: flex; flex-direction: column;
+  }
+  .toc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .toc-head .t { font-size: 13px; font-weight: 600; }
+  .toc-head .c { font-size: 11.5px; color: var(--ink-3); }
+  .toc-filter {
+    width: 100%; height: 30px; margin: 8px 0 8px; padding: 0 9px;
+    font-family: var(--han); font-size: 12.5px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px; background: #fafbfc; outline: none;
+  }
+  .toc-filter:focus { border-color: var(--l1); background: #fff; }
+  .toc-list { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; display: flex; flex-direction: column; }
+  .toc-wrap { display: flex; flex-direction: column; }
+  .toc-link {
+    display: block; text-decoration: none; color: var(--ink-2);
+    font-size: 12.5px; padding: 3px 7px; border-radius: 6px;
+    border-left: 2px solid transparent; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .toc-link:hover { background: #fafbfc; color: var(--l1); }
+  .toc-link.lv3 { padding-left: 16px; font-size: 12px; color: var(--ink-3); }
+  .toc-link.cur { background: var(--l1-bg); color: var(--l1); border-left-color: var(--l1); font-weight: 600; }
+  .toc-empty { font-size: 12px; color: var(--ink-3); padding: 6px 7px; }
+  .toc-toggle { display: none; border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+    border-radius: 999px; padding: 4px 11px; font-size: 12.5px; cursor: pointer; font-family: inherit; }
+
+  /* 应用品牌区：与另两页共用 */
+  .brand {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .brand .name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .brand .cn { font-size: 19px; font-weight: 700; letter-spacing: .5px; color: var(--l1); }
+  .brand .en { font-size: 12.5px; color: var(--ink-3); letter-spacing: .3px; }
+  .brand-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .brand-nav a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--ink-2); text-decoration: none;
+    border: 1px solid var(--line); background: #fff;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .brand-nav a:hover { border-color: var(--l1); color: var(--l1); }
+  .brand-nav a[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  header h1 { font-size: 23px; margin: 0 0 8px; letter-spacing: .3px; }
+  header .sub { color: var(--ink-2); font-size: 13.5px; margin: 0; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 18px 20px; margin-top: 16px;
+  }
+  .panel > h2 { font-size: 16px; margin: 0 0 4px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .panel > h2 .no { font-size: 12.5px; font-weight: 600; color: var(--l1); background: var(--l1-bg);
+    border-radius: 6px; padding: 1px 7px; }
+  .panel > h2 .tag { font-size: 11.5px; font-weight: 500; color: var(--ink-3);
+    border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+  .panel h3 { font-size: 14px; margin: 16px 0 8px; }
+  .kv { font-size: 13.5px; }
+  .kv div { display: flex; gap: 10px; margin: 3px 0; }
+  .kv .k { flex: 0 0 96px; color: var(--ink-3); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafbfc; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .scroll-x { overflow-x: auto; }
+  /* 条文段落 */
+  .clause p { margin: 6px 0; font-size: 13.5px; }
+  /* 术语条目 */
+  .termlist { display: grid; gap: 10px; margin-top: 10px; }
+  .term { border-left: 3px solid var(--l1-bg); padding: 2px 0 2px 12px; }
+  .term-no { font-size: 12px; color: var(--ink-3); }
+  .term-name { font-size: 14.5px; font-weight: 600; margin: 2px 0 4px; }
+  .term-en { font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+  .term p { margin: 4px 0; font-size: 13.5px; }
+  .term-note { font-size: 12.5px; color: var(--ink-2); background: #fafbfc; border-radius: 6px; padding: 5px 9px; margin-top: 5px; }
+  .term-src { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; }
+
+  /* 条款小块（如 4.1.1） */
+  .clause { margin: 10px 0 0; }
+  .clause.sub { margin: 8px 0 0 8px; padding-left: 10px; border-left: 2px solid var(--line); }
+  .clause .t { font-size: 12.5px; color: var(--l1); font-weight: 600; }
+  .clause p { margin: 3px 0 0; font-size: 13.5px; }
+
+  /* 规范性引用文件清单 */
+  .stdlist { display: grid; gap: 2px; margin-top: 8px; font-size: 13.5px; }
+  .stdlist > div { display: flex; gap: 12px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .stdlist > div:last-child { border-bottom: 0; }
+  .stdlist .stdno { flex: 0 0 116px; color: var(--l1); font-weight: 600; }
+
+  .notes { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-2); }
+  /* 参考文献列表 */
+  .reflist { display: grid; gap: 3px; font-size: 13.5px; }
+  .reflist > div { display: flex; gap: 10px; align-items: baseline; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .reflist > div:last-child { border-bottom: 0; }
+  .reflist .refno { flex: 0 0 30px; color: var(--l1); font-weight: 600; }
+
+  /* 待填区与待填单元格 */
+  .todo-box {
+    border: 1px dashed var(--line); background: #fafbfc; border-radius: 8px;
+    padding: 12px 14px; font-size: 13px; color: var(--ink-3);
+  }
+  .todo-cell { color: var(--ink-3); font-size: 13px; text-align: center; padding: 18px 10px; }
+
+  footer { margin-top: 26px; color: var(--ink-3); font-size: 12px; line-height: 1.9; }
+  @media (max-width: 560px) {
+    .kv div { flex-direction: column; gap: 0; }
+    .toc-filter { font-size: 16px; }
+  }
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; padding: 16px 14px 56px; gap: 12px; }
+    .sidebar { position: static; }
+    .toc { max-height: none; }
+    .toc-toggle { display: inline-flex; }
+    body:not(.toc-open) .toc-list { display: none; }
+    body:not(.toc-open) .toc-filter { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <aside class="sidebar">
+    <nav class="toc" aria-label="目录">
+      <div class="toc-head">
+        <span class="t">目录</span>
+        <button class="toc-toggle" type="button" id="tocToggle">展开/收起</button>
+        <span class="c" id="tocCount"></span>
+      </div>
+      <input class="toc-filter" id="tocFilter" type="search" placeholder="筛选条目…" aria-label="筛选目录">
+      <div class="toc-list" id="tocList"></div>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+  <div class="brand">
+    <div class="name">
+      <span class="cn">编校工具箱</span>
+      <span class="en">Proofreader&rsquo;s Toolbox</span>
+    </div>
+    <nav class="brand-nav">
+      <a href="index.html">汉字表查询</a>
+      <a href="rules.html">GB/T 7714—2025</a>
+      <a href="cyt266.html" aria-current="page">CY/T 266—2023</a>
+      <a href="cyt121.html">CY/T 121—2015</a>
+    </nav>
+  </div>
+
+  <header>
+    <h1>CY/T 266—2023《图书编校质量差错判定和计算方法》速查</h1>
+  </header>
+
+  <section class="panel" id="sec-meta">
+    <h2><span class="no">标准信息</span>CY/T 266—2023 <span class="tag">已核实内容</span></h2>
+    <div class="kv" style="margin-top:10px">
+      <div><span class="k">标准编号</span><span>CY/T 266—2023《图书编校质量差错判定和计算方法》</span></div>
+      <div><span class="k">英文名称</span><span>Methods for determining and calculating errors in the quality of book editing and proofreading</span></div>
+      <div><span class="k">发布日期</span><span>2023-06-16</span></div>
+      <div><span class="k">实施日期</span><span>2023-08-01</span></div>
+      <div><span class="k">发布机构</span><span>国家新闻出版署</span></div>
+      <div><span class="k">标准性质</span><span>新闻出版行业标准（CY/T）</span></div>
+      <div><span class="k">归口单位</span><span>全国新闻出版标准化技术委员会（SAC/TC 527）</span></div>
+      <div><span class="k">起草单位</span><span>中央宣传部出版产品质量监督检测中心、中国新闻出版研究院、化学工业出版社有限公司、中国科技出版传媒股份有限公司、人民卫生出版社有限公司、全国科学技术名词审定委员会、浙江大学出版社有限责任公司、海峡出版发行集团有限责任公司、浙江省出版产品质量检测中心、浙江出版联合集团有限公司、北京大学出版社有限公司、高等教育出版社有限公司、商务印书馆有限公司、人民教育出版社有限公司、山东金星教育科技有限公司、天津市出版物产品质量监督检测(鉴定)中心、人民音乐出版社有限公司、中国农业出版社有限公司、湖南岳麓书社有限责任公司、北京体育大学出版社有限公司、中国社会科学院语言研究所</span></div>
+      <div><span class="k">主要起草人</span><span>袁亚平、信君、夏悦、潘正安、李锋、匡敏、李旗、于小雪、代晓明、袁亚春、沈建国、方育德、傅祚华、肖振华、张惠芳、徐婵、杜振雷、段志兵、陈小蕾、王建卫、邹亮、贾鸿杰、席雁、朱丹、王世涛、王敏、张华、干锦春、黄金武、韩培付、郑立、肖若晨、沈明、裴飞、魏玉山、刘颖丽</span></div>
+      <div><span class="k">适用范围</span><span>图书编校质量的检查；非连续性内部资料性出版物参照使用，电子图书参考使用</span></div>
+      <div><span class="k">不适用</span><span>地图图书和图书中地图图片部分的质量检查</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-1">
+    <h2><span class="no">1</span>范围</h2>
+    <div class="clause">
+      <p>本文件规定了图书编校质量检查工作中检查字数的计算方法、编校差错的判定和计错方法及编校差错率的计算方法。</p>
+      <p>本文件适用于图书编校质量的检查，非连续性内部资料性出版物参照使用，电子图书参考使用。</p>
+      <p>本文件不适用于地图图书和图书中地图图片部分的质量检查。</p>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-2">
+    <h2><span class="no">2</span>规范性引用文件</h2>
+    <div class="clause">
+      <p>下列文件中的内容通过文中的规范性引用而构成本文件必不可少的条款。其中，注日期的引用文件，仅该日期对应的版本适用于本文件；不注日期的引用文件，其最新版本（包括所有的修改单）适用于本文件。</p>
+    </div>
+    <div class="stdlist">
+      <div><span class="stdno">GB 3100</span><span>国际单位制及其应用</span></div>
+      <div><span class="stdno">GB/T 3101</span><span>有关量、单位和符号的一般原则</span></div>
+      <div><span class="stdno">GB/T 3102.1</span><span>空间和时间的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.2</span><span>周期及其有关现象的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.3</span><span>力学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.4</span><span>热学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.5</span><span>电学和磁学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.6</span><span>光及有关电磁辐射的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.7</span><span>声学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.8</span><span>物理化学和分子物理学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.9</span><span>原子物理学和核物理学的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.10</span><span>核反应和电离辐射的量和单位</span></div>
+      <div><span class="stdno">GB/T 3102.11</span><span>物理科学和技术中使用的数学符号</span></div>
+      <div><span class="stdno">GB/T 3102.12</span><span>特征数</span></div>
+      <div><span class="stdno">GB/T 3102.13</span><span>固体物理学的量和单位</span></div>
+      <div><span class="stdno">GB/T 15834</span><span>标点符号用法</span></div>
+      <div><span class="stdno">GB/T 15835</span><span>出版物上数字用法</span></div>
+      <div><span class="stdno">GB/T 16159</span><span>汉语拼音正词法基本规则</span></div>
+      <div><span class="stdno">CY/T 119—2015</span><span>学术出版规范 科学技术名词</span></div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-3">
+    <h2><span class="no">3</span>术语和定义</h2>
+    <p class="lead" style="color:var(--ink-2);font-size:13.5px">下列术语和定义适用于本文件。</p>
+    <div class="termlist">
+        <div class="term">
+          <div class="term-no">3.1</div>
+          <div class="term-name">图书 <span class="term-en">book</span></div>
+          <p>用文字或图片、符号记录知识于纸张等载体，并具有相当篇幅的非连续性出版物。</p>
+          <div class="term-src">[来源：CY/T 50—2008，2.57，有修改]</div>
+        </div>
+        <div class="term">
+          <div class="term-no">3.2</div>
+          <div class="term-name">编校质量 <span class="term-en">editing and proofreading quality</span></div>
+          <p>文字、图片、符号、格式等方面呈现的编辑和校订满足要求的程度。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.3</div>
+          <div class="term-name">编校差错 <span class="term-en">editing and proofreading error</span></div>
+          <p>文字、图片、符号、格式等方面存在的不符合法律法规、国家标准、相关行业标准，或逻辑性、知识性等的错误。</p>
+        </div>
+        <div class="term">
+          <div class="term-no">3.4</div>
+          <div class="term-name">编校差错率 <span class="term-en">editing and proofreading error rate</span></div>
+          <p>编校差错数占总字数的比率。</p>
+          <div class="term-note">注：编校差错率是评价编校质量是否符合要求的指标，在实际操作中通常以抽查部分的编校差错率代表整体的编校差错率。</div>
+        </div>
+    </div>
+  </section>
+
+  <section class="panel" id="sec-4">
+    <h2><span class="no">4</span>检查字数计算方法</h2>
+<h3>4.1 通则</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.1</span></div>
+        <p>图书检查字数的计算，应以检查的版面字数为准，即：检查字数 = 每行字数 × 每面行数 × 检查面数。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.2</span></div>
+        <p>封一、封二、封三、封四、护封、封套、腰封和扉页，除空白面不计外，每面应按正文满版字数的 50%计算；书脊、有文字的勒口，应按正文满版字数计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.3</span></div>
+        <p>版权页、前言、目录、后记等辅文，每面应按正文满版字数计算。空白面不计。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.4</span></div>
+        <p>凡连续编排页码的正文，不论是否排字或排有插图、表格，均应按一面满版字数计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.5</span></div>
+        <p>插页部分应按实际版面字数计算；不易直接计算的，应折合为正文开本面数，再按正文版面字数计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.6</span></div>
+        <p>书眉（或中缝）和单排的页码、边码应各算一行（列）计入正文行（列）数，一并计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.7</span></div>
+        <p>分栏排版的图书，各栏之间的空白也应计入版面字数。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.8</span></div>
+        <p>参考文献、索引、附录等字号有变化时，应分别按实际版面字数计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.9</span></div>
+        <p>用小字号排版的脚注文字，单面满 5 行不足 10 行的，该面应按正文满版字数加 15%计算；满 10 行的，该面应按注文满版计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.10</span></div>
+        <p>用小字号排版的夹注文字，应采用折合行数的方法，比照脚注文字进行计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.1.11</span></div>
+        <p>外文图书、少数民族文字图书，图书的外文部分、少数民族文字部分和拼音部分，应以对应字号的汉字字数加 30%计算。</p>
+      </div>
+<h3>4.2 图书辅文部分图片页和以图片为主的图书的字数计算</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.2.1</span></div>
+        <p>有文字说明的版面，应按满版字数的 50%计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.2.2</span></div>
+        <p>没有文字说明的版面，应按满版字数的 20%计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.2.3</span></div>
+        <p>无法计算版面字数的，可以一个印张 1 万字为基数，参照 4.2.1、4.2.2 计算。</p>
+      </div>
+<h3>4.3 曲谱类图书的字数计算</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.3.1</span></div>
+        <p>文字与曲谱混排图书，应按满版字数计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">4.3.2</span></div>
+        <p>纯曲谱图书，每面曲谱行数在 11 行及以下的，可以一个印张 1.7 万字为基数计算字数；每面曲谱行数超过 11 行的，每多 1 ～ 5 行，可按一个印张增加 0.85 万字计算字数。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-5">
+    <h2><span class="no">5</span>编校差错判定和计错方法</h2>
+<h3>5.1 文字、图片差错</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.1</span></div>
+        <p>一本图书中，同一错别字重复出现，每面计 1 次，最多计 4 次；阿拉伯数字与汉字数字混用差错，每面计 1 次，最多计 10 次；除错别字和阿拉伯数字与汉字数字混用差错外，其他同一文字、图片差错重复出现，每面计 1 次，最多计 3 次。书眉（或中缝）中同一文字、图片差错重复出现，按一面上差错数加 1 倍计算。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.2</span></div>
+        <p>封一、扉页上的文字、图片差错，以对应的计错数加 1 倍计算；相关文字不一致，有一项计 1 个差错。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.1.3</span></div>
+        <p>文字、图片差错类型的判定和计错应符合表 1 的相关要求。</p>
+      </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 1　文字、图片差错类型的判定和计错方法</caption>
+        <thead><tr><th style="width:64px">序号</th><th style="width:180px">类型</th><th>描述</th><th style="width:190px">计错方法</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1-1</td><td>错字、别字</td><td>—</td><td>每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-2</td><td>多字、漏字</td><td>—</td><td>每处多、漏 1 个字，计 1 个差错；2～5 个字，计 2 个差错 5 个字以上，计 4 个差错</td></tr>
+          <tr><td class="mono">1-3</td><td>颠倒字</td><td>—</td><td>可以用一个校对符号改正的，每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-4</td><td>不规范使用汉字</td><td>1. 繁简字混用，且未作说明<br>2. 不规范使用异体字、异形词<br>3. 不规范使用旧字形</td><td>每处计 0.5 个差错</td></tr>
+          <tr><td class="mono">1-5</td><td>词语差错</td><td>1. 错用词语或成语<br>2. 专有名词差错<br>3. 使用带有侮辱、低俗含义的网络词语<br>4. 不当使用谐音词<br>5. 不规范使用缩略语</td><td>每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-6</td><td>计量单位中文名称差错</td><td>工具书的科技条目，科技类教材、教辅和其他科技图书，使用计量单位中文名称不符合 GB 3100、GB/T 3101、GB/T 3102.1～GB/T 3102.10、GB/T 3102.13 或相关行业标准</td><td>每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-7</td><td>科技名词差错</td><td>工具书、教材教辅、科技图书，使用科学技术语不符合国家有关机构审定公布的规范词</td><td>每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-8</td><td>相关文字不一致</td><td>1. 目录页码或标题与正文不一致<br>2. 索引、检字表等页码或词条与正文不对应<br>3. 图表中个别文字或数值信息与正文不一致<br>4. 书眉内容与正文不对应</td><td>每处计 1 个差错</td></tr>
+          <tr><td class="mono">1-9</td><td>不规范或不当表达引起的倾向性问题</td><td>1. 涉港澳台表达不规范<br>2. 涉民族、宗教表达不规范<br>3. 涉边疆地理表达不规范<br>4. 以未成年人为对象的图书中含有不利于未成年人健康成长的表述或图片</td><td>每处计 2 个差错</td></tr>
+          <tr><td class="mono">1-10</td><td>知识性差错</td><td>1. 事实性、科学性、概念性差错<br>2. 法律、法规引用差错，文件摘录差错<br>3. 公式、运算、答案差错<br>4. 题目表述有误，且影响做题</td><td>每处计 2 个差错</td></tr>
+          <tr><td class="mono">1-11</td><td>逻辑性、语法性差错</td><td>1. 句式杂糅<br>2. 歧义、前后矛盾、不合事理<br>3. 语句不通、表意不明<br>4. 同一单元或同一份试卷中的试题完全重复<br>5. 答案无故缺失</td><td>每处计 2 个差错</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 1　文字、图片差错类型的判定和计错方法（续）</caption>
+        <thead><tr><th style="width:64px">序号</th><th style="width:180px">类型</th><th>描述</th><th style="width:190px">计错方法</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">1-12</td><td>图、表的内容与说明文字不符</td><td>1. 图、表所表达的主要内容与文字叙述内容不一致<br>2. 图注、表注与图表内容不一致</td><td>每处计 2 个差错</td></tr>
+          <tr><td class="mono">1-13</td><td>不当使用已废止的标准或陈旧资料</td><td>1. 不当使用已废止的法律法规、标准规范<br>2. 使用应该更新而未更新的数据<br>3. 使用旧名称，且没有相关说明</td><td>每处计 1 个差错，由于不当使用造成知识性错误的计 2 个差错</td></tr>
+          <tr><td class="mono">1-14</td><td>少数民族文字差错</td><td>1. 拼写、标调差错<br>2. 汉语言转写错误</td><td>以一个字母或单词为单位，无论其中几处有错，计 1 个差错</td></tr>
+          <tr><td class="mono">1-15</td><td>外文、国际音标差错</td><td>1. 拼写差错<br>2. 时态、单复数差错<br>3. 音符、重音差错</td><td>以一个对应的汉字或词组为单位，计 1 个差错</td></tr>
+          <tr><td class="mono">1-16</td><td>汉语拼音拼写、标调错误</td><td>不符合《汉语拼音方案》或 GB/T 16159 的规定</td><td>以一个对应的汉字或词组为单位，计 1 个差错</td></tr>
+          <tr><td class="mono">1-17</td><td>阿拉伯数字、罗马数字差错</td><td>年代、日期、时间、数值、比例差错</td><td>无论几位数，都计 1 个差错</td></tr>
+          <tr><td class="mono">1-18</td><td>阿拉伯数字与汉字数字混用</td><td>不符合 GB/T 15835 的规定</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">1-19</td><td>字母形式误用，相似字母、符号混用差错</td><td>1. 不同文种字形相似的字母混用<br>2. 字母与相似符号混用<br>3. 字母大小写、正斜体、黑白体误用</td><td>每处计 0.5 个差错</td></tr>
+          <tr><td class="mono">1-20</td><td>非常用字母词首次出现，未加注中文译名</td><td>1. 非学术类图书中首次使用工具书未收录的字母词，未加注中文译名<br>2. 学术类图书不符合 CY/T 119—2015 中 4.4 的规定</td><td>每处计 0.5 个差错</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes"><div>注：差错描述为判断差错类型提供参考，包括但不限于表 1 给出的描述。</div></div>
+<h3>5.2 符号差错</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.2.1</span></div>
+        <p>一本图书中，同一标点符号差错重复出现，最多计 10 次；注码、序号标注差错全书超过 3 处，计 1 个差错；同一单位符号、科学符号、曲谱符号等符号差错重复出现，每面计 1 次，最多计 3 次。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.2.2</span></div>
+        <p>符号差错类型的判定和计错应符合表 2 的相关要求。</p>
+      </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 2　符号差错类型的判定和计错方法</caption>
+        <thead><tr><th style="width:64px">序号</th><th style="width:180px">类型</th><th>描述</th><th style="width:190px">计错方法</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">2-1</td><td>标点符号差错</td><td>1. 标点符号用法不符合 GB/T 15834 的规定<br>2. 标点符号多用、漏用<br>3. 小数点与间隔号互错，冒号与比号互错</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">2-2</td><td>注码、序号标注差错</td><td>注码、图序、表序、公式序标注差错</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">2-3</td><td>单位符号、科学符号等符号差错</td><td>法定计量单位符号、科学技术各学科中科学符号的用法不符合 GB 3100、GB/T 3101、GB/T 3102（所有部分）的要求或相关行业标准</td><td>每处计 0.5 个差错</td></tr>
+          <tr><td class="mono">2-4</td><td>曲谱符号差错</td><td>1. 速度、力度、表情符号差错<br>2. 演奏、演唱技术与方法的符号差错<br>3. 反复号、声部分并、歌词分并符号差错<br>4. 音高差错<br>5. 时值差错<br>6. 休止差错</td><td>每处计 0.5 个差错</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes"><div>注：差错描述为判断差错类型提供参考，包括但不限于表 2 给出的描述。</div></div>
+<h3>5.3 格式差错</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.1</span></div>
+        <p>一本图书中，同一格式差错重复出现，最多计 10 次。</p>
+      </div>
+      <div class="clause sub">
+        <div class="t"><span class="no">5.3.2</span></div>
+        <p>格式差错类型的判定和计错应符合表 3 的相关要求。</p>
+      </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 3　格式差错类型的判定和计错方法</caption>
+        <thead><tr><th style="width:64px">序号</th><th style="width:180px">类型</th><th>描述</th><th style="width:190px">计错方法</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">3-1</td><td>空行、空格错误</td><td>1. 影响文意的不合版式要求的另页、另面、另段、另行、接排、空行，需要空行、空格而未空<br>2. 汉语拼音分连写错误，多空格或未空格</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">3-2</td><td>转行错误</td><td>1. 阿拉伯数字、汉语拼音、外文缩写断开转行<br>2. 外文单词未按音节转行</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">3-3</td><td>编写体例差错</td><td>1. 字体错、字号错、文字颜色错，或字体、字号、颜色同时错<br>2. 参考文献、参考答案编写体例不一致<br>3. 多、漏表线<br>4. 曲谱中的谱表、连谱号、提示性符号的多、漏或错位<br>5. 编委会成员姓名顺序排错</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">3-4</td><td>排版格式差错</td><td>1. 同一章节几个同级标题的位置、转行格式不统一<br>2. 文字编排格式不一致</td><td>每处计 0.1 个差错</td></tr>
+          <tr><td class="mono">3-5</td><td>图、表、书眉、符号的位置差错</td><td>1. 书眉单双页位置互错<br>2. 曲谱符号的位置、顺序、方向错误<br>3. 行首、行末误用标点符号<br>4. 专名号、着重号错位<br>5. 图、表位置与文字描述不一致</td><td>每处计 1 个差错</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes"><div>注：差错描述为判断差错类型提供参考，包括但不限于表 3 给出的描述。</div></div>
+  </section>
+
+  <section class="panel" id="sec-6">
+    <h2><span class="no">6</span>编校差错率计算方法</h2>
+<h3>6.1 计算公式</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">6.1</span></div>
+        <p>编校差错率计算公式：<b>编校差错率 = 编校差错数 ÷ 总字数</b>。</p>
+      </div>
+<h3>6.2 表示方法</h3>
+      <div class="clause sub">
+        <div class="t"><span class="no">6.2</span></div>
+        <p>编校差错率用万分比表示。</p>
+      </div>
+  </section>
+
+  <section class="panel" id="sec-ref">
+    <h2><span class="no">参考文献</span></h2>
+    <div class="reflist">
+      <div><span class="refno">[1]</span><span>CY/T 50—2008 出版术语</span></div>
+      <div><span class="refno">[2]</span><span>第一届全国人民代表大会 汉语拼音方案</span></div>
+      <div><span class="refno">[3]</span><span>中华人民共和国新闻出版总署（2004）26 号令 图书质量管理规定</span></div>
+      <div><span class="refno">[4]</span><span>新出政发〔2010〕11 号 关于进一步规范出版物文字使用的通知</span></div>
+      <div><span class="refno">[5]</span><span>国发〔2013〕23 号 国务院关于公布《通用规范汉字表》的通知</span></div>
+    </div>
+  </section>
+
+  <footer>
+    <div><b>标准信息：</b>CY/T 266—2023《图书编校质量差错判定和计算方法》，2023-06-16 发布，2023-08-01 实施，国家新闻出版署发布。</div>
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // 目录：从正文标题自动生成（面板 h2 = 分组标题，面板内 h3 = 下级条目）
+  const tocList = document.getElementById('tocList');
+  const tocFilter = document.getElementById('tocFilter');
+  const tocCount = document.getElementById('tocCount');
+  const tocToggle = document.getElementById('tocToggle');
+  if (!tocList) return;
+
+  function headingText(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.tag, .tag-done, .no').forEach((n) => n.remove());
+    return clone.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  function buildToc() {
+    const panels = [...document.querySelectorAll('section.panel')];
+    tocList.innerHTML = '';
+    const links = [];
+    let sections = 0;
+
+    panels.forEach((panel, pi) => {
+      const h2 = panel.querySelector('h2');
+      if (!h2) return;
+      const noEl = h2.querySelector('.no');
+      const no = noEl ? noEl.textContent.trim() : '';
+      if (!panel.id) panel.id = 'panel-' + (pi + 1);
+      const title = headingText(h2) || no || ('第 ' + (pi + 1) + ' 节');
+      const label = no && !title.startsWith(no) ? no + ' ' + title : title;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'toc-wrap';
+
+      const a = document.createElement('a');
+      a.className = 'toc-link lv2';
+      a.href = '#' + panel.id;
+      a.dataset.id = panel.id;
+      a.dataset.search = label.toLowerCase();
+      a.textContent = label;
+      a.title = label;
+      wrap.appendChild(a);
+      links.push(a);
+
+      [...panel.querySelectorAll('h3')].forEach((sub, si) => {
+        const txt = headingText(sub);
+        if (!txt) return;
+        if (!sub.id) sub.id = panel.id + '-' + (si + 1);
+        const s = document.createElement('a');
+        s.className = 'toc-link lv3';
+        s.href = '#' + sub.id;
+        s.dataset.id = sub.id;
+        s.dataset.search = txt.toLowerCase();
+        s.textContent = txt;
+        s.title = txt;
+        wrap.appendChild(s);
+        links.push(s);
+      });
+
+      tocList.appendChild(wrap);
+      sections += 1;
+    });
+
+    tocCount.textContent = sections + ' 节 / ' + links.length + ' 条';
+    return links;
+  }
+
+  const tocLinks = buildToc();
+
+  // 滚动高亮
+  const byId = new Map(tocLinks.map((a) => [a.dataset.id, a]));
+  const targets = tocLinks.map((a) => document.getElementById(a.dataset.id)).filter(Boolean);
+  function highlight() {
+    let best = null;
+    for (const t of targets) {
+      if (t.getBoundingClientRect().top - 120 <= 0) best = t;
+      else break;
+    }
+    const id = best ? best.id : (targets[0] && targets[0].id);
+    tocLinks.forEach((a) => a.classList.toggle('cur', a.dataset.id === id));
+    const active = byId.get(id);
+    if (active && tocList.scrollHeight > tocList.clientHeight + 4) {
+      const r = active.getBoundingClientRect();
+      const lr = tocList.getBoundingClientRect();
+      if (r.top < lr.top || r.bottom > lr.bottom) active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { highlight(); ticking = false; });
+  }, { passive: true });
+  highlight();
+
+  // 筛选
+  function filter(term) {
+    const q = term.trim().toLowerCase();
+    let shown = 0;
+    tocLinks.forEach((a) => {
+      const hit = !q || a.dataset.search.includes(q);
+      a.style.display = hit ? '' : 'none';
+      if (hit) shown += 1;
+      const body = a.dataset.search.replace(/^[\d.\s\u9644\u5f55]+/, '');
+      a.style.order = !q ? '0' : (body.startsWith(q) ? '0' : '1');
+    });
+    [...tocList.querySelectorAll('.toc-wrap')].forEach((w) => {
+      const any = [...w.querySelectorAll('.toc-link')].some((a) => a.style.display !== 'none');
+      w.style.display = any ? '' : 'none';
+    });
+    tocCount.textContent = q ? '命中 ' + shown + ' 项' : '共 ' + shown + ' 条';
+    let empty = tocList.querySelector('.toc-empty');
+    if (!shown && q) {
+      if (!empty) { empty = document.createElement('div'); empty.className = 'toc-empty'; tocList.appendChild(empty); }
+      empty.textContent = '没有匹配的条目';
+      empty.style.display = '';
+    } else if (empty) {
+      empty.style.display = 'none';
+    }
+  }
+  tocFilter.addEventListener('input', () => filter(tocFilter.value));
+  tocList.addEventListener('click', (e) => {
+    if (e.target.closest('.toc-link') && window.matchMedia('(max-width: 900px)').matches) {
+      document.body.classList.remove('toc-open');
+    }
+  });
+  tocToggle.addEventListener('click', () => document.body.classList.toggle('toc-open'));
+  if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('toc-open');
+})();
+</script>
+</body>
+</html>

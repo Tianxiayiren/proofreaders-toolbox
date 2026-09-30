@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编校工具箱 Proofreader&#39;s Toolbox · GB/T 7714—2025 参考文献著录规则速查</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --ink: #1f2329;
+    --ink-2: #646a73;
+    --ink-3: #8f959e;
+    --line: #e4e6eb;
+    --l1: #3370ff;
+    --l1-bg: #eef4ff;
+    --l2: #0f9d8c;
+    --l2-bg: #e8f8f6;
+    --l3: #d97706;
+    --l3-bg: #fdf3e3;
+    --danger: #d83931;
+    --danger-bg: #fef1f0;
+    --radius: 12px;
+    --shadow: 0 2px 10px rgba(31, 35, 41, .06);
+    /* 与主页保持一致的汉字字体，详见 index.html 中同一变量的说明 */
+    --han: "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
+           "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Source Han Sans SC",
+           "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 var(--han);
+    -webkit-font-smoothing: antialiased;
+  }
+  /* 版式：左侧固定目录 + 右侧正文（窄屏折成顶部按钮） */
+  .wrap {
+    max-width: 1240px; margin: 0 auto; padding: 22px 20px 72px;
+    display: grid; grid-template-columns: 252px minmax(0, 1fr);
+    gap: 22px; align-items: start;
+  }
+  .sidebar { position: sticky; top: 22px; }
+  .content { min-width: 0; }   /* 关键：允许收缩，否则长 URL 会把整页撑宽 */
+  .toc {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 12px 12px 10px; max-height: calc(100vh - 44px);
+    display: flex; flex-direction: column;
+  }
+  .toc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .toc-head .t { font-size: 13px; font-weight: 600; }
+  .toc-head .c { font-size: 11.5px; color: var(--ink-3); }
+  .toc-filter {
+    width: 100%; height: 30px; margin: 8px 0 8px; padding: 0 9px;
+    font-family: var(--han); font-size: 12.5px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 7px; background: #fafbfc; outline: none;
+  }
+  .toc-filter:focus { border-color: var(--l1); background: #fff; }
+  .toc-list { overflow-y: auto; flex: 1; margin: 0 -4px; padding: 0 4px; display: flex; flex-direction: column; }
+  .toc-wrap { display: flex; flex-direction: column; }
+  .toc-group { margin: 9px 0 2px; font-size: 11px; font-weight: 600; color: var(--ink-3); letter-spacing: .5px; }
+  .toc-group:first-child { margin-top: 0; }
+  .toc-link {
+    display: block; text-decoration: none; color: var(--ink-2);
+    font-size: 12.5px; padding: 3px 7px; border-radius: 6px;
+    border-left: 2px solid transparent; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+  .toc-link:hover { background: #fafbfc; color: var(--l1); }
+  .toc-link.lv3 { padding-left: 16px; font-size: 12px; color: var(--ink-3); }
+  .toc-link.lv4 { padding-left: 28px; font-size: 12px; color: var(--ink-3); }
+  .toc-link.cur { background: var(--l1-bg); color: var(--l1); border-left-color: var(--l1); font-weight: 600; }
+  .toc-empty { font-size: 12px; color: var(--ink-3); padding: 6px 7px; }
+  .toc-toggle { display: none; }
+  a { color: var(--l1); }
+  /* 全站不使用等宽字体：Consolas 等字体的 U+2014 仅约 0.5 字符宽，
+     会让「——」显示成约 1 个汉字宽，与 2 个汉字宽的规范写法不符。
+     .mono / code 类名保留（HTML 中已大量引用），但字体统一为 --han。 */
+  code, .mono { font-family: var(--han); }
+
+  /* 应用品牌区：两页共用，置于页头之上 */
+  .brand {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .brand .name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .brand .cn { font-size: 19px; font-weight: 700; letter-spacing: .5px; color: var(--l1); }
+  .brand .en { font-size: 12.5px; color: var(--ink-3); letter-spacing: .3px; }
+  .brand-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .brand-nav a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--ink-2); text-decoration: none;
+    border: 1px solid var(--line); background: #fff;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .brand-nav a:hover { border-color: var(--l1); color: var(--l1); }
+  .brand-nav a[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  header h1 { font-size: 23px; margin: 0 0 8px; letter-spacing: .3px; }
+  header .sub { color: var(--ink-2); font-size: 13.5px; margin: 0; }
+  header .sub b { color: var(--ink); font-weight: 600; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    margin-top: 16px;
+  }
+  .panel > h2 {
+    font-size: 16px; margin: 0 0 4px;
+    display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  }
+  .panel > h2 .no {
+    font-size: 12.5px; font-weight: 600; color: var(--l1);
+    background: var(--l1-bg); border-radius: 6px; padding: 1px 7px;
+    font-family: var(--han);
+  }
+  .panel > h2 .tag {
+    font-size: 11.5px; font-weight: 500; color: var(--ink-3);
+    border: 1px solid var(--line); border-radius: 999px; padding: 0 8px;
+  }
+  .panel .lead { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+  .panel h3 { font-size: 14px; margin: 16px 0 8px; }
+
+  /* 提示条 */
+  .notice {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--danger-bg); border: 1px solid #f7c9c5;
+    border-radius: 10px; padding: 12px 14px; margin-top: 16px;
+  }
+  .notice .mark { color: var(--danger); font-size: 17px; line-height: 1.3; }
+  .notice p { margin: 0; font-size: 13px; color: #7a2e29; }
+  .notice p + p { margin-top: 5px; }
+  .tip {
+    background: var(--l2-bg); border: 1px solid #bfe6e1; border-radius: 10px;
+    padding: 12px 14px; margin-top: 16px; font-size: 13px; color: #0b5c53;
+  }
+  .tip b { color: #06443d; }
+
+
+  /* 已填章节 */
+  .done {
+    background: var(--l2-bg); border: 1px solid #bfe6e1; border-radius: 10px;
+    padding: 12px 14px; margin: 10px 0; font-size: 13.5px; color: #0b5c53;
+  }
+  .done .tag-done {
+    display: inline-block; font-size: 11.5px; font-weight: 600;
+    background: #fff; border: 1px solid #bfe6e1; color: var(--l2);
+    border-radius: 999px; padding: 0 8px; margin-left: 6px;
+  }
+  .clause { margin: 14px 0 0; }
+  /* 三层条款（如 7.5.2.2）用左侧细线缩进，层级一眼可辨 */
+  .clause.sub { margin: 10px 0 0 14px; padding-left: 12px; border-left: 2px solid var(--line); }
+  /* 「——」引导的清单（标准原文多用全角破折号列举） */
+  ul.dash { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13.5px; }
+  ul.dash li { display: flex; gap: 6px; margin: 3px 0; }
+  ul.dash li .d { flex: 0 0 auto; color: var(--ink-3); }
+  .clause > .t {
+    font-weight: 600; font-size: 13.5px; color: var(--ink);
+    display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+  }
+  .clause > .t .no {
+    font-family: var(--han); color: var(--l1);
+    background: var(--l1-bg); border-radius: 6px; padding: 0 6px; font-size: 12.5px;
+  }
+  .clause > p { margin: 5px 0 0; font-size: 13.5px; }
+  /* 章下面的“节”（如 9.2 下的 9.2.1），层级在 h3 之下 */
+  h4.sub-h { font-size: 13.5px; margin: 16px 0 6px; color: var(--ink); letter-spacing: .3px; }
+  .egs { margin: 7px 0 0; display: grid; gap: 3px; }
+  /* 示例行：flex 布局必须给文字列加 min-width:0，
+     否则 flex 子项默认 min-width:auto，遇到长 URL（如 8.5.3 的检索链接）
+     不肯收缩，会把整行撑到面板之外（实测宽达 2040px、页面整体横向溢出 1089px）。 */
+  .egs .eg {
+    display: flex; gap: 8px; align-items: baseline; font-size: 13px;
+    background: #fafbfc; border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 9px;
+    min-width: 0;
+  }
+  .egs .eg .lb { flex: 0 0 auto; color: var(--ink-3); font-size: 12px; }
+  /* 著录示例：与全站一致的汉字字体（原因见上方 code/.mono 处的说明） */
+  .egs .eg .tx {
+    font-family: var(--han); font-size: 13px;
+    flex: 1 1 auto; min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;      /* 兼容旧内核、并让长 URL 可在任意位置断开 */
+  }
+  /* 「原题：…」标注：必须可收缩、可换行。若设 flex:0 0 auto（不收缩），
+     窄屏遇到长原题会顶出视口（实测窄屏溢出 153px）。 */
+  .egs .eg .ori {
+    color: var(--ink-3); font-size: 12px;
+    margin-left: auto; text-align: right;
+    flex: 0 1 auto; min-width: 0;
+    overflow-wrap: break-word; word-break: break-word;
+  }
+  @media (max-width: 700px) {
+    /* 窄屏把「示例」与「原题」改为上下两行，避免两列互相挤压 */
+    .egs .eg { flex-wrap: wrap; }
+    .egs .eg .ori { flex: 1 1 100%; text-align: left; margin-left: 0; }
+  }
+  /* 脚注角标：规范中圈码作上标，不应与正文同大。
+     用 relative 位移而非改 vertical-align，可避免撑高行距、打乱行距。 */
+  .fn, sup.fn {
+    position: relative; top: -0.42em;
+    font-size: .62em; line-height: 0;
+    vertical-align: baseline;
+    margin-left: .06em;
+  }
+  .notes { margin: 8px 0 0; font-size: 12.5px; color: var(--ink-2); }
+  .notes div { margin: 3px 0; }
+  .notes code { font-size: 12.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 4px; font-size: 13.5px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #fafbfc; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  td.mono, th.mono { font-family: var(--han); }
+  .scroll-x { overflow-x: auto; }
+
+  /* 格式模板行 */
+  .fmt {
+    display: flex; gap: 10px; align-items: baseline;
+    background: #fafbfc; border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 12px; margin: 8px 0;
+  }
+  .fmt .k { flex: 0 0 52px; font-size: 12.5px; color: var(--ink-3); }
+  .fmt .v { font-family: var(--han); font-size: 13px; }
+
+  ul.plain { margin: 8px 0; padding-left: 20px; font-size: 13.5px; }
+  ul.plain li { margin: 4px 0; }
+  ol.chg { margin: 8px 0; padding-left: 22px; font-size: 13.5px; }
+  ol.chg li { margin: 5px 0; }
+  ol.chg .no { font-family: var(--han); color: var(--ink-3); margin-right: 4px; }
+  .src { font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+  .src b { color: var(--ink-2); font-weight: 600; }
+  .who { font-size: 12px; color: var(--ink-3); }
+  .kv { font-size: 13.5px; }
+  .kv div { display: flex; gap: 10px; margin: 3px 0; }
+  .kv .k { flex: 0 0 96px; color: var(--ink-3); font-size: 13px; }
+  footer { margin-top: 26px; color: var(--ink-3); font-size: 12px; line-height: 1.9; }
+  footer a { color: var(--ink-2); }
+  @media (max-width: 560px) {
+    .fmt { flex-direction: column; gap: 2px; }
+    .kv div { flex-direction: column; gap: 0; }
+    .toc-filter { font-size: 16px; }   /* 避免移动端聚焦时自动放大 */
+  }
+  /* 窄屏：目录收到正文上方，默认折叠，点按钮展开 */
+  @media (max-width: 900px) {
+    .wrap { grid-template-columns: 1fr; padding: 16px 14px 56px; gap: 12px; }
+    .sidebar { position: static; }
+    .toc { max-height: none; }
+    .toc-toggle { display: inline-flex; }
+    body:not(.toc-open) .toc-list { display: none; }
+    body:not(.toc-open) .toc-filter { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <aside class="sidebar">
+    <nav class="toc" aria-label="目录">
+      <div class="toc-head">
+        <span class="t">目录</span>
+        <button class="toc-toggle ghost" type="button" id="tocToggle">展开/收起</button>
+        <span class="c" id="tocCount"></span>
+      </div>
+      <input class="toc-filter" id="tocFilter" type="search" placeholder="筛选条目…（如 出版、标准）" aria-label="筛选目录">
+      <div class="toc-list" id="tocList"></div>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+  <div class="brand">
+    <div class="name">
+      <span class="cn">编校工具箱</span>
+      <span class="en">Proofreader&rsquo;s Toolbox</span>
+    </div>
+    <nav class="brand-nav">
+      <a href="index.html">汉字表查询</a>
+      <a href="rules.html" aria-current="page">GB/T 7714—2025</a>
+      <a href="cyt266.html">CY/T 266—2023</a>
+      <a href="cyt121.html">CY/T 121—2015</a>
+    </nav>
+  </div>
+
+
+  <header>
+    <h1>GB/T 7714—2025《信息与文献 参考文献著录规则》速查</h1>
+    <p class="sub">按标准章节顺序编排：著录通则（7）、各文献类型（8.1–8.15）、标引体系（9）、附录 A。左侧目录可筛选与跳转。</p>
+  </header>
+
+  <!-- ===== 版本与状态（已核实，来源见文末） ===== -->
+  <section class="panel" id="sec-meta">
+    <h2><span class="no">版本状态</span>标准基本信息</h2>
+    <div class="kv" style="margin-top:10px">
+      <div><span class="k">标准编号</span><span>GB/T 7714—2025《信息与文献 参考文献著录规则》</span></div>
+      <div><span class="k">发布日期</span><span>2025-12-02</span></div>
+      <div><span class="k">实施日期</span><span>2026-07-01</span></div>
+      <div><span class="k">代替标准</span><span>GB/T 7714—2015（自 2026-07-01 起被代替）</span></div>
+      <div><span class="k">标准性质</span><span>推荐性国家标准（GB/T），由全国信息与文献标准化技术委员会归口</span></div>
+      <div><span class="k">采用关系</span><span>非等效采用 ISO 690:2021</span></div>
+      <div><span class="k">起草单位</span><span>武汉大学、中国科学院文献情报中心、中国科学技术信息研究所、北京师范大学出版社（集团）有限公司、北京大学、华中师范大学、中国科学院计算机网络信息中心、《中华医学杂志》社有限责任公司、中国科学技术期刊编辑学会、中国标准化研究院、北京万方数据股份有限公司、同方知网数字出版技术股份有限公司等</span></div>
+      <div><span class="k">主要起草人</span><span>黄如花、刘霞、曾燕、刘孝平、张耀蕾、郭红梅、陈浩元、刘曙光、曾建勋、胡良霖、周力虹、魏均民、郭德华、谢振峰、张旭</span></div>
+      <div><span class="k">适用范围</span><span>适用于作者和编制者著录参考文献</span></div>
+    </div>
+    <p class="src"><b>来源：</b>标准"前言"及各高校图书馆/期刊编辑部公告页（文末列出）。</p>
+  </section>
+
+  <!-- ===== 使用提醒 ===== -->
+  <div class="notice">
+    <div class="mark">!</div>
+    <div>
+      <p>各刊、各校对本标准的执行时点与细则（如是否要求永久标识符、是否著录引用日期）可能另有规定，<b>投稿或交稿前先查对方最新要求</b>，并保持全文同一版本。</p>
+    </div>
+  </div>
+  <!-- ===== 关键约定（已核实） ===== -->
+  <div class="tip">
+    <b>关键约定——著录用符号是"前置符"。</b>标准 6.1 规定："本文件中的著录用符号为前置符。"
+    即各著录项目之间用 <b>句点「.」</b>，出版地与出版者之间用 <b>冒号「:」</b>，出版者与出版年之间用 <b>逗号「,」</b>，析出文献与其出处之间用 <b>双斜线「//」</b>；一行的末尾可用句点，也可不用。
+    <div style="margin-top:6px;font-size:12.5px;color:#0b5c53">
+      本页各处著录格式与示例均按这一套符号录入。需注意：部分二手解读页会把示例中的全角「：」「，」改成半角 ", "（如把「武汉：武汉大学，2022：87」写作「武汉:武汉大学,2022:87」），这只是标点形式的改动；著录时以标准正式文本的写法为准。
+    </div>
+  </div>
+
+  <!-- ===== 7 著录通则 ===== -->
+  <section class="panel" id="sec-7">
+    <h2><span class="no">7</span>著录通则 <span class="tag">2015 版称"著录细则"</span></h2>
+
+    <h3>条目一览</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th style="width:88px">章条号</th><th style="width:150px">条目</th><th>要点</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">7.1</td><td>责任者</td><td>
+            <div><b>7.1.1</b> 个人责任者姓在前名在后；欧美责任者中译名可只著录姓、名可缩写且缩写后省略缩写点；西文著录时姓全部著录、首字母大写，名可缩写为首字母（无法识别时可著录全名）；汉语拼音著录时姓全部著录、首字母大写，<b>名宜用全称</b>。</div>
+            <div style="margin-top:4px"><b>7.1.2</b> 著作方式相同的责任者不超过 3 个时全部照录；超过 3 个时可著录前 3 个，其后加"，等"或与之相应的词。</div>
+            <div style="margin-top:4px"><b>7.1.3</b> 无责任者或责任者情况不明的，"主要责任者"项应注明"佚名"或与之相应的词；采用顺序编码制的可省略此项，直接著录题名。</div>
+            <div style="margin-top:4px"><b>7.1.4</b> 机关团体名称通常按著录信息源著录；应由上至下分级著录，上下级间用"."分隔（用汉字书写的机关团体名称除外）。</div>
+            <div style="margin-top:6px" class="who">完整条款原文与示例见下方「7.1 责任者（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.2</td><td>题名<br><span class="who">含 7.2.3 其他题名信息</span></td><td>
+            <div><b>7.2.1</b> 题名应按著录信息源所载的内容著录；无题名信息时可根据信息源所载内容<b>自拟题名并置于"[ ]"内</b>。</div>
+            <div style="margin-top:4px"><b>7.2.2</b> 同一责任者的多个合订题名，著录前 3 个；不同责任者的多个合订题名，可只著录第一个或处于显要位置的；<b>参考文献中不著录并列题名</b>。</div>
+            <div style="margin-top:4px"><b>7.2.3</b> 其他题名信息按信息资源外部特征的具体情况著录，<b>包括副题名、说明题名文字、多卷书的分卷书名/卷次/册次等</b>。</div>
+            <div style="margin-top:6px" class="who">完整条款原文与全部示例见下方「7.2 题名（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.3</td><td>文献类型标识、文献载体标识</td><td>
+            <div>文献类型标识、文献载体标识应按照<b>附录 A</b> 著录。<b>电子资源既应著录文献类型标识，也应著录文献载体标识。</b></div>
+            <div style="margin-top:4px" class="who">完整条款原文与 7 个示例见下方「7.3 文献类型标识、文献载体标识（详）」；附录 A 的标识代码表见本页「附录 A」一节。</div>
+          </td></tr>
+          <tr><td class="mono">7.4</td><td>版本</td><td>
+            <div><b>第 1 版可不著录，其他版本说明应著录。</b>版本宜用阿拉伯数字、序数缩写形式或其他标识表示。<b>古籍的版本应按原文客观照录</b>，如"写本""抄本""刻本""活字本"等。</div>
+            <div style="margin-top:4px" class="who">完整条款原文与 6 个示例见下方「7.4 版本（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.5</td><td>出版项</td><td>
+            <div><b>7.5.1 通用要求</b>　出版信息应按<b>出版地、出版者、出版日期</b>顺序著录；学位论文的学位授予单位所在地/单位/年、报告的发布日期、专利的公告（公开）日期、档案的收藏者所在地/收藏者/形成日期、数据集的发布平台、预印本的出版平台，均按出版信息的要求著录。</div>
+            <div style="margin-top:4px"><b>7.5.2 出版地</b>　著录出版者所在城市名；同名异地宜附省、州名或国名（Cambridge, Eng. / Cambridge, Mass.）；多个出版地只著录第一个或处于显要位置的；无出版地时中文著录"[出版地不详]"、外文著录"[S.l.]"，电子资源可省略。</div>
+            <div style="margin-top:4px"><b>7.5.3 出版者</b>　按信息源所载形式著录，也可用国际公认的简化/缩写形式（International Rice Research Institute → IRRI）；多个出版者只著录第一个或处于显要位置的；无出版者时中文著录"[出版者不详]"、外文著录"[s.n.]"，电子资源可省略。</div>
+            <div style="margin-top:4px"><b>7.5.4 出版日期</b>　出版年用公元纪年、阿拉伯数字；有其他纪年形式时置于"（ ）"内。例："1947（民国三十六年）"。期刊在线出版日期、报纸出版日期、报告发布日期、专利公告日期、档案形成日期按 <span class="mono">YYYY-MM-DD</span> 著录；出版年无法确定时依次选用版权年、印刷年、估计的出版年，估计的出版年置于"[ ]"内。</div>
+            <div style="margin-top:6px" class="who">完整条款原文与全部示例见下方「7.5 出版项（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.6</td><td>创建/发布或修改日期、引用日期</td><td>
+            <div>电子资源的创建日期、发布日期、修改日期、引用日期应按照 <span class="mono">YYYY-MM-DD</span> 格式，用阿拉伯数字著录。</div>
+            <div style="margin-top:4px">示例：<span class="mono">(2012-05-03)[2013-11-12]</span>　—— 创建/发布或修改日期用<b>圆括号</b>，引用日期用<b>方括号</b>。</div>
+          </td></tr>
+          <tr><td class="mono">7.7</td><td>页码<br><span class="who">析出文献页码 / 引文页码</span></td><td>
+            <div>析出文献页码或引文页码，应采用阿拉伯数字著录（见 8.2、8.3、8.5、8.6、8.7、8.8、8.10、8.12、9.2.1.3、9.3.1.4）。<b>引自序言或扉页题词的页码，可按实际情况著录。无页码有文章编号的，应将文章编号按页码著录。</b></div>
+            <div style="margin-top:4px" class="who">完整条款原文与全部 6 个示例见下方「7.7 页码（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.8</td><td>获取和访问路径</td><td>
+            <div>获取和访问路径应根据电子资源在互联网中的实际情况著录。</div>
+            <div style="margin-top:4px" class="who">完整条款原文与示例见下方「7.8 获取和访问路径（详）」。</div>
+          </td></tr>
+          <tr><td class="mono">7.9</td><td>永久标识符（PID）</td><td>
+            <div><b>7.9.1</b> 获取和访问路径中含永久标识符时，<b>可不重复著录</b>永久标识符（如路径已含 DOI 或 URN）。</div>
+            <div style="margin-top:4px"><b>7.9.2</b> 获取和访问路径中不含永久标识符时，<b>可按照原文如实著录</b>永久标识符。</div>
+            <div style="margin-top:4px" class="who">永久标识符（PID）包括数字对象标识符（DOI）、统一资源名称（URN）等。完整条款原文、示例与注见下方「7.9 永久标识符（详）」。</div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>7.1 责任者（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.1.1</span>个人责任者</div>
+      <p>个人责任者应采用姓在前名在后的著录形式。欧美责任者的中译名可只著录其姓，其名可用缩写字母，缩写名后省略缩写点。同姓不同名的欧美责任者，其中译名不仅应著录其姓，还应著录其名的首字母。用西文著录个人责任者，姓应全部著录，首字母应大写，名可缩写为首字母，如用首字母无法识别该人名时，可著录全名；用汉语拼音著录个人责任者，姓应全部著录，首字母应大写，名宜用全称。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">李时珍</span><span class="ori">原题：（明）李时珍</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">乔纳斯</span><span class="ori">原题：（瑞士）伊迪斯·乔纳斯</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">昂温</span><span class="ori">原题：（美）S. 昂温（Stephen Unwin）</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">昂温 G，昂温 P S</span><span class="ori">原题：（英）G. 昂温（G. Unwin），P. S. 昂温（P. S. Unwin）</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">丸山敏秋</span><span class="ori">原题：（日）丸山敏秋</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">凯西尔</span><span class="ori">原题：（阿拉伯）伊本·凯西尔</span></div>
+        <div class="eg"><span class="lb">示例 7</span><span class="tx">Einstein A</span><span class="ori">原题：Albert Einstein</span></div>
+        <div class="eg"><span class="lb">示例 8</span><span class="tx">Williams-Ellis A</span><span class="ori">原题：Amabel Williams-Ellis</span></div>
+        <div class="eg"><span class="lb">示例 9</span><span class="tx">De Morgan A</span><span class="ori">原题：Augustus De Morgan</span></div>
+        <div class="eg"><span class="lb">示例 10</span><span class="tx">Li Jiangning</span><span class="ori">原题：Li Jiangning</span></div>
+        <div class="eg"><span class="lb">示例 11</span><span class="tx">Godard J-L</span><span class="ori">原题：Jean-Luc Godard</span></div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.1.2</span>著作方式相同的多个责任者</div>
+      <p>著作方式相同的责任者不超过 3 个时，应全部照录。超过 3 个时，可著录前 3 个责任者，其后加"，等"或与之相应的词。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">钱学森，刘再复</span><span class="ori">原题：钱学森　刘再复</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">李四光，华罗庚，茅以升</span><span class="ori">原题：李四光　华罗庚　茅以升</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">印森林，吴胜和，李俊飞，等</span><span class="ori">原题：印森林　吴胜和　李俊飞　冯文杰</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">Fordham E W, Ali A, Turner D A, et al</span><span class="ori">原题：Ernest W. Fordham, Amiad Ali, David A. Turner, John R. Charters</span></div>
+      </div>
+      <div class="notes">
+        <div>中文责任者之间用全角逗号"，"，西文责任者之间用半角逗号加空格", "，二者不可混用。</div>
+        <div>超过 3 个时加"等"（中文）或与之相应的词"et al."（西文）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.1.3</span>无责任者或责任者情况不明</div>
+      <p>无责任者或者责任者情况不明的文献，"主要责任者"项应注明"佚名"或与之相应的词。凡采用顺序编码制（见 9.2）组织的参考文献可省略此项，直接著录题名。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">佚名，2023. 人物龙凤帛画[J]. 中国书法（3）：5.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">Anon, 1981. Coffee drinking and cancer of the pancreas[J]. Br Med J, 283(6292): 628.</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">人物龙凤帛画[J]. 中国书法，2023（3）：5.</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">Coffee drinking and cancer of the pancreas[J]. Br Med J, 1981, 283(6292): 628.</span></div>
+      </div>
+      <div class="notes">
+        <div>注 1：示例 1、示例 2 为<b>著者-出版年制</b>。</div>
+        <div>注 2：示例 3、示例 4 为<b>顺序编码制</b>——即顺序编码制下可省略"佚名"项，直接以题名起头。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.1.4</span>机关团体责任者</div>
+      <p>凡是对文献负责的机关团体名称，通常根据著录信息源著录。机关团体名称应由上至下分级著录，上下级间用"."分隔，用汉字书写的机关团体名称除外。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">中国科学院物理研究所</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">贵州省土壤普查办公室</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">American Chemical Society</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">Stanford University. Department of Civil Engineering</span></div>
+      </div>
+      <div class="notes">
+        <div>示例 4 体现"上下级间用 <code>.</code> 分隔"；示例 1、示例 2 为汉字书写的机关团体名称，属除外情形。</div>
+      </div>
+    </div>
+
+    <div class="done" style="margin-top:16px">
+      <b>另需注意——其他责任者（译者）的位置与责任方式。</b>
+      主要责任者只著录姓名，不著录"主编""著"等责任方式；译者等其他责任者在姓名后注明责任方式。
+      从标准实例可见两种写法：图书类写在题名与版本之间（如 <span class="mono">姜海伦，译//《环球科学》杂志社.</span>、<span class="mono">许明贤，吴忠超，译.</span>），
+      期刊析出文献写在题名之后（如 <span class="mono">庄司浅水. …[J]. 徐超，译. 東京：…</span>）。
+      <div style="margin-top:5px;font-size:12.5px">
+        各文献类型表中"其他责任者/析出文献其他责任者"的必要性为<b>可选</b>（见 8.2、8.3 著录项目表）。
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.1.1–7.1.4 的条款正文与全部示例，由本页使用者提供的标准原文录入（未经改写）。"其他责任者"部分综合标准 8.3、8.5 的实例与 8.2、8.3 著录项目表中"其他责任者"的必要性标注。</p>
+
+    <h3>7.2 题名（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.2.1</span>题名的著录与自拟题名</div>
+      <p>题名应按著录信息源所载的内容著录。如无题名信息，可根据信息源所载内容自拟题名，并置于"[ ]"内。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">《西游记》词汇对《汉语大词典》书证研究</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">张子正蒙注</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">法哲学原理，或，自然法和国家学纲要</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">北京师范大学学报（自然科学版）</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">[《昨日之歌》图书封面]</span><span class="ori">自拟题名</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">Gases in sea ice 1975—1979</span></div>
+        <div class="eg"><span class="lb">示例 7</span><span class="tx">J Math Phys</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文）：示例 5 为自拟题名。</div>
+        <div>示例 3 显示题名中的"或"用逗号分隔成"<span class="mono">法哲学原理，或，自然法和国家学纲要</span>"；示例 7 为刊名缩写形式。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.2.2</span>合订题名与并列题名</div>
+      <p>同一责任者的多个合订题名，应著录前 3 个合订题名。对于不同责任者的多个合订题名，可只著录第一个或处于显要位置的合订题名。在参考文献中不著录并列题名。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">为人民服务；纪念白求恩；愚公移山</span><span class="ori">原题:为人民服务 纪念白求恩 愚公移山 毛泽东著</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">大趋势</span><span class="ori">原题:大趋势 Megatrends</span></div>
+      </div>
+      <div class="notes">
+        <div>合订题名之间用分号"；"分隔。示例 2 体现"不著录并列题名"——原题中的并列题名 Megatrends 未著录。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.2.3</span>其他题名信息</div>
+      <p>其他题名信息应按信息资源外部特征的具体情况著录。其他题名信息包括副题名，说明题名文字，多卷书的分卷书名、卷次、册次等。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">地壳运动假说：从大陆漂移到板块构造</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">三松堂全集：第4卷</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">世界出版业：美国卷</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">ECL 集成电路：原理与设计</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">中国科学技术史：第二卷 科学思想史</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">红楼梦：脂砚斋全评本</span></div>
+        <div class="eg"><span class="lb">示例 7</span><span class="tx">Asian Pacific Journal of Cancer Prevention: e-only</span></div>
+      </div>
+      <div class="notes">
+        <div>其他题名信息与题名之间用冒号分隔；中文用全角"："，西文用半角加空格": "（见示例 7）。</div>
+        <div>示例 2、示例 5 为多卷书的分卷书名与卷次。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.2.1–7.2.3 的条款正文与全部示例，由本页使用者提供的标准原文录入（未经改写）。"notes"中标注"（原文）"者系标准原有注释，其余为本页为便于使用而作的提示。</p>
+
+    <h3>7.3 文献类型标识、文献载体标识（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.3</span>标识的著录依据与电子资源的要求</div>
+      <p>文献类型标识、文献载体标识应按照附录 A 著录。电子资源既应著录文献类型标识，也应著录文献载体标识。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">马寅初讲义[M]</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">环境司法制度改革对企业绿色创新的影响：实质性绿色创新还是漂绿？——基于公益诉讼试点的证据[J]</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">严复思想与中国式现代化：纪念严复诞辰 170 周年学术研讨会论文集[C]</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">中子反射数据分析技术[R]</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">信息与文献 都柏林核心元数据元素集[S]</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">一种智能戒指的无线充电装置[P]</span></div>
+        <div class="eg"><span class="lb">示例 7</span><span class="tx">Quantum field theory: an introduction for chemical physicists[EB/OL]</span></div>
+      </div>
+      <div class="notes">
+        <div>标识紧接题名之后，置于方括号内；示例 1–6 为纸质文献，只著录文献类型标识。</div>
+        <div><b>示例 7 为电子资源</b>，类型标识与载体标识同时著录，写作 <span class="mono">[EB/OL]</span>——即"类型标识/载体标识"用斜线分隔（2025 版中 <span class="mono">EB</span> 指网站、网页，<span class="mono">OL</span> 指联机网络）。</div>
+        <div>示例 2 中题名与副题名之间用"："、副题名前用破折号"——"，可对照 7.2.3。</div>
+        <div>各类标识代码见本页「附录 A 文献类型与载体标识代码」一节。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.3 的条款正文与全部 7 个示例，由本页使用者提供的标准原文录入（未经改写）；示例后的分析性说明为本页据示例归纳。</p>
+
+    <h3>7.4 版本（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.4</span>版本说明的著录</div>
+      <p>第 1 版可不著录，其他版本说明应著录。版本宜用阿拉伯数字、序数缩写形式或其他标识表示。古籍的版本应按原文客观照录，如"写本""抄本""刻本""活字本"等。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">3版</span><span class="ori">原题：第三版</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">新1版</span><span class="ori">原题：新1版</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">明刻本</span><span class="ori">原题：明刻本</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">V1.0</span><span class="ori">原题：V1.0</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">5th ed</span><span class="ori">原题：Fifth edition</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">Rev. ed</span><span class="ori">原题：Revised edition</span></div>
+      </div>
+      <div class="notes">
+        <div>中文版本用"阿拉伯数字 + 版"（示例 1：第三版 → <span class="mono">3版</span>；示例 2：新1版）；西文版本用序数缩写形式（示例 5：Fifth edition → <span class="mono">5th ed</span>；示例 6：Revised edition → <span class="mono">Rev. ed</span>）。</div>
+        <div>示例 3 为古籍，按原文照录"明刻本"，不作数字化改写；示例 4 的 <span class="mono">V1.0</span> 属"其他标识"形式。</div>
+        <div>版本项位于题名（及其他题名信息）之后；位置见各文献类型著录格式。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.4 的条款正文与全部 6 个示例，由本页使用者提供的标准原文录入（未经改写）；示例后的分析性说明为本页据示例归纳。</p>
+
+    <h3>7.5 出版项（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.5.1</span>通用要求</div>
+      <p>出版信息应按出版地、出版者、出版日期顺序著录。<br>以下元素应按照出版信息的要求著录：</p>
+      <ul class="dash">
+        <li><span class="d">——</span><span>学位论文中的学位授予单位所在地、学位授予单位、学位授予年（见 8.7）；</span></li>
+        <li><span class="d">——</span><span>报告中的发布日期（见 8.8）；</span></li>
+        <li><span class="d">——</span><span>专利中的公告（公开）日期（见 8.10）；</span></li>
+        <li><span class="d">——</span><span>档案中的收藏者所在地、收藏者、形成日期（见 8.12）；</span></li>
+        <li><span class="d">——</span><span>数据集中的发布平台（见 8.14）；</span></li>
+        <li><span class="d">——</span><span>预印本中的出版平台（见 8.15）。</span></li>
+      </ul>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">北京：人民出版社，2013</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">New York: Academic Press, 2012</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">武汉：武汉大学，2022</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">沈阳：辽宁省档案馆，1931-11-07</span></div>
+      </div>
+      <div class="notes">
+        <div>符号：出版地与出版者之间用<b>冒号</b>，出版者与出版日期之间用<b>逗号</b>（中文全角"："与"，"，西文半角加空格）。</div>
+        <div>示例 3 为学位论文（"武汉：武汉大学，2022"对应学位授予单位所在地/单位/年）；示例 4 为档案，日期用 <span class="mono">YYYY-MM-DD</span>。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.5.2</span>出版地</div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.2.1</span></div>
+        <p>出版地应著录出版者所在的城市名称。对同名异地的城市名，宜在城市名后附省、州名或国名等限定语。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">Cambridge, Eng.</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">Cambridge, Mass.</span></div>
+          <div class="eg"><span class="lb">示例 3</span><span class="tx">Taizhou, Zhejiang</span></div>
+          <div class="eg"><span class="lb">示例 4</span><span class="tx">Taizhou, Jiangsu</span></div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.2.2</span></div>
+        <p>文献中载有多个出版地，宜只著录第一个或处于显要位置的出版地。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">北京：科学出版社，2013</span><span class="ori">原题：科学出版社　北京　上海　2013</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">London: Butterworths, 2000</span><span class="ori">原题：Butterworths London Boston Durban Singapore Sydney Toronto Wellington 2000</span></div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.2.3</span></div>
+        <p>无出版地的中文文献可著录"出版地不详"，外文文献可著录"S.l."，并置于"[ ]"内。无出版地的电子资源可省略此项。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">[出版地不详]：三户图书刊行社，1990</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">[S.l.]: Macmillan, 1975</span></div>
+          <div class="eg"><span class="lb">示例 3</span><span class="tx">Open University Press, 2025. https://www.mheducation.co.uk/economics-13e-9781526850232-emea-group.</span></div>
+        </div>
+        <div class="notes">
+          <div>示例 3 为电子资源：省略了出版地（按本条"无出版地的电子资源可省略此项"）。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.5.3</span>出版者</div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.3.1</span></div>
+        <p>出版者可按著录信息源所载的形式著录，也可按国际公认的简化形式或缩写形式著录。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">中国标准出版社</span><span class="ori">原题：中国标准出版社</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">Elsevier Science Publishers</span><span class="ori">原题：Elsevier Science Publishers</span></div>
+          <div class="eg"><span class="lb">示例 3</span><span class="tx">IRRI</span><span class="ori">原题：International Rice Research Institute</span></div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.3.2</span></div>
+        <p>文献中载有多个出版者，宜只著录第一个或处于显要位置的出版者。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例</span><span class="tx">Chicago: ALA, 1978</span><span class="ori">原题：American Library Association / Chicago Canadian Library Association / Ottawa 1978</span></div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.3.3</span></div>
+        <p>无出版者的中文文献可著录"出版者不详"，外文文献可著录"s.n."，并置于"[ ]"内。无出版者的电子资源可省略此项。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">哈尔滨：[出版者不详]，2013</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">Salt Lake City: [s.n.], 1964</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.5.4</span>出版日期</div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.4.1</span></div>
+        <p>出版年应采用公元纪年，并用阿拉伯数字著录。如有其他纪年形式时，应将原有的纪年形式置于"（ ）"内。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">[1947（民国三十六年）]</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">[1705（康熙四十四年）]</span></div>
+        </div>
+        <div class="notes">
+          <div><b>本页调整：</b>示例 1、示例 2 的<b>外层括号已由圆括号改为中括号</b>——标准原文外层为圆括号（见本条"置于'（ ）'内"），内层仍为圆括号。按本页约定著录时：外层用"[ ]"，内层用"（ ）"。</div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.4.2</span></div>
+        <p>期刊的在线出版日期、报纸的出版日期、报告的发布日期、专刊的公告日期、档案的形成日期应按照"YYYY-MM-DD"格式，用阿拉伯数字著录。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例</span><span class="tx">2013-01-08</span></div>
+        </div>
+      </div>
+
+      <div class="clause sub">
+        <div class="t"><span class="no">7.5.4.3</span></div>
+        <p>出版年无法确定时，可依次选用版权年、印刷年、估计的出版年。估计的出版年应置于"[ ]"内。</p>
+        <div class="egs">
+          <div class="eg"><span class="lb">示例 1</span><span class="tx">c1988</span><span class="ori">版权年</span></div>
+          <div class="eg"><span class="lb">示例 2</span><span class="tx">1995印刷</span></div>
+          <div class="eg"><span class="lb">示例 3</span><span class="tx">[1936]</span><span class="ori">估计的出版年</span></div>
+        </div>
+        <div class="notes">
+          <div>注（原文）：示例 1 为版权年；示例 3 为估计的出版年。</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.5.1–7.5.4.3 的条款正文与全部示例，由本页使用者提供的标准原文录入（未经改写）；标注"（原文）"者为标准原有注释，"notes"中其余说明为本页据示例归纳。</p>
+
+    <h3>7.6 创建/发布或修改日期、引用日期（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.6</span>日期格式</div>
+      <p>电子资源的创建日期、发布日期、修改日期、引用日期应按照"YYYY-MM-DD"格式，用阿拉伯数字著录。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例</span><span class="tx">(2012-05-03)[2013-11-12]</span></div>
+      </div>
+      <div class="notes">
+        <div>两类日期用不同的括号区分：<b>创建/发布或修改日期用圆括号</b> <span class="mono">(2012-05-03)</span>，<b>引用日期用方括号</b> <span class="mono">[2013-11-12]</span>。</div>
+        <div>与 2025 版的改动对应：旧版称"公告日期、更新日期、引用日期"，且访问日期适用范围更宽；本版仅电子资源著录日期（见"与 2015 版的主要技术变化"g 项）。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.6 的条款正文与示例，由本页使用者提供的标准原文录入（未经改写）；示例后的分析性说明为本页据示例归纳。</p>
+
+    <h3>7.7 页码（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.7</span>页码的著录</div>
+      <p>析出文献页码或引文页码，应采用阿拉伯数字著录（见 8.2、8.3、8.5、8.6、8.7、8.8、8.10、8.12、9.2.1.3、9.3.1.4）。引自序言或扉页题词的页码，可按实际情况著录。无页码有文章编号的，应将文章编号按页码著录。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">曹凌. 中国佛教疑伪经综录[M]. 上海：上海古籍出版社，2011：19.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">钱学森. 创建系统学[M]. 太原：山西科学技术出版社，2001：序2-3.</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">冯友兰. 冯友兰自选集[M]. 2版. 北京：首都师范大学出版社，2008：第1版自序.</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">李约瑟. 题词[M]//苏克福，管成学，邓明鲁. 苏颂与《本草图经》研究. 长春：长春出版社，1991：扉页.</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">Dunbar K L, Mitchell D A. Revealing nature’ s synthetic potential through the study of ribosomal natural product biosynthesis[J/OL]. ACS Chemical Biology, 2013, 8 (3): 473-487. http://pubs.acs.org/doi/pdfplus/10.1021/cb3005325.</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">Maurya A, Szymanski M, Karlowski W M. ARA: a flexible pipeline for automated exploration of NCBI SRA datasets[J/OL]. GigaScience, 2023, 12: giad067. https://doi.org/10.1093/gigascience/giad067.</span></div>
+      </div>
+      <div class="notes">
+        <div>页码位于出版项之后，用冒号引导：<span class="mono">出版地：出版者，出版年：页码</span>（示例 1 <span class="mono">2011：19</span>）。</div>
+        <div><b>非数字页码按实际情况著录</b>：示例 2 <span class="mono">序2-3</span>（序言）、示例 3 <span class="mono">第1版自序</span>、示例 4 <span class="mono">扉页</span>（题词），对应条文"引自序言或扉页题词的页码，可按实际情况著录"。</div>
+        <div><b>无页码有文章编号时，文章编号按页码著录</b>：示例 6 的 <span class="mono">giad067</span> 即文章编号，置于页码位置。</div>
+        <div>示例 5、示例 6 为电子期刊 [J/OL]，路径与永久标识符（DOI）同时著录。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.7 的条款正文与全部 6 个示例，由本页使用者提供的标准原文录入（未经改写）；示例后的分析性说明为本页据示例归纳。</p>
+
+    <h3>7.8 获取和访问路径（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.8</span>路径的著录依据</div>
+      <p>获取和访问路径应根据电子资源在互联网中的实际情况著录。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">储大同. 恶性肿瘤个体化治疗靶向药物的临床表现[J/OL]. 中华肿瘤杂志, 2010, 32 (10): 721-724. https://rs.yiigle.com/cmaid/37528. DOI:10.3760/cma.j.issn.0253-3766.2010.10.001.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">Torres L, Salisbury F, Yazbeck B, et al. Connecting the library to the curriculum[M/OL]. Singapore: Springer Nature, 2021: 97. https://link.springer.com/book/10.1007/978-981-16-3868-8.</span></div>
+      </div>
+      <div class="notes">
+        <div>路径紧跟出版信息之后，以 URL 形式著录；示例 1 为电子期刊 [J/OL]，示例 2 为电子图书 [M/OL]。</div>
+        <div>示例 1 的 URL 中含 OA 标识（<span class="mono">cmaid/37528</span>）；示例 2 的路径本身含 DOI（即 7.9.1 所说"路径中含永久标识符"的情形）。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.8 的条款正文与 2 个示例，由本页使用者提供的标准原文录入（未经改写）；示例后的分析性说明为本页据示例归纳。</p>
+
+    <h3>7.9 永久标识符（详）</h3>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.9.1</span>路径中含永久标识符时可不再重复</div>
+      <p>获取和访问路径中含永久标识符时，可不重复著录永久标识符。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">Deverell W, Igler D. A companion to California history[M/OL]. New York: John Wiley &amp; Sons, 2013: 21-22. https://onlinelibrary.wiley.com/doi/book/10.1002/9781444305036.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">Gross O. Word associations as a language model for generative and creative tasks[D/OL]. Helsinki: University of Helsinki, 2016: 55-56. http://urn.fi/URN:ISBN:978-951-51-2090-8.</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文 1）：该书永久标识符为：DOI: 10.1002/9781444305036。</div>
+        <div>注（原文 2）：该书永久标识符为：URN: ISBN: 978-951-51-2090-8。</div>
+        <div>两个示例的路径里已经含永久标识符（<span class="mono">10.1002/9781444305036</span> 与 <span class="mono">URN:ISBN:978-951-51-2090-8</span>），故不再单独重复著录。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">7.9.2</span>路径中不含永久标识符时按原文如实著录</div>
+      <p>获取和访问路径中不含永久标识符时，可按照原文如实著录永久标识符。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例</span><span class="tx">刘乃安. 生物质材料热解失重动力学及其分析方法研究[D/OL]. 合肥: 中国科学技术大学, 2000: 17-18. https://d.wanfangdata.com.cn/thesis/Y351065. DOI:10.7666/d.y351065.</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文）：该论文永久标识符为：DOI: 10.7666/d.y351065。</div>
+        <div>路径 <span class="mono">https://d.wanfangdata.com.cn/thesis/Y351065</span> 中不含永久标识符，故在路径之后如实著录 DOI。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">补充</span>永久标识符（PID）的范围</div>
+      <p>标准术语定义：永久标识符（persistent identifier，PID）指"通过独立于数字对象物理位置或当前所有权提供访问以确保对数字对象永久存取的唯一标识符"，<b>包括数字对象标识符（DOI）、统一资源名称（URN）等</b>。2025 版将 2015 版的"数字对象唯一标识符"改为"永久标识符"（见"与 2015 版的主要技术变化"h 项）。</p>
+      <div class="notes">
+        <div>本页所在各文献类型的著录项目表中，"永久标识符"的必要性标为<b>电子资源可选</b>。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>7.9.1、7.9.2 的条款正文、示例与注，由本页使用者提供的标准原文录入（未经改写）；"补充"一节引自标准第 3 章术语定义（经闽江学院图书馆解读页与标准扫描件文本核对）。</p>
+  </section>
+
+  <!-- ===== 4 著录信息源 / 5 著录用文字 ===== -->
+  <section class="panel" id="sec-4">
+    <h2><span class="no">4</span>著录信息源 <span class="tag">2015 版为第 5 章</span></h2>
+
+    <div class="clause">
+      <div class="t"><span class="no">4.1</span>信息源的范围</div>
+      <p>参考文献的著录信息源是被著录的信息资源本身。</p>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">4.2</span>各类文献的主要信息源</div>
+      <p>图书、连续出版物、会议录、学位论文、报告、标准、专利、网站、网页、档案、地图、数据集、预印本应依据题名页、版权页、封面等主要信息源著录各个著录项目。</p>
+      <div class="notes">
+        <div>这一条覆盖 8.2–8.15 中"以自身为著录对象"的各类文献，信息源优先看<b>题名页、版权页、封面</b>。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">4.3</span>析出文献的信息源</div>
+      <p>图书、连续出版物中的析出文献可依据参考文献本身著录析出文献的信息，并可依据主要信息源著录析出文献的出处。</p>
+      <div class="notes">
+        <div>即析出文献部分（题名、责任者等）可依<b>参考文献本身</b>；其出处（图书/期刊的出版信息）依<b>主要信息源</b>。对应 8.3 图书中的析出文献、8.5 连续出版物中的析出文献。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">4.4</span>电子资源的信息源</div>
+      <p>电子资源可依据其存储介质上提供的主要信息源著录各个著录项目。</p>
+      <div class="notes">
+        <div>电子资源以<b>存储介质上提供的主要信息源</b>为准，而非其对应的纸质版本。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>第 4 章 4.1–4.4 的条款正文，由本页使用者提供的标准原文录入（未经改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 5 著录用文字 ===== -->
+  <section class="panel" id="sec-5">
+    <h2><span class="no">5</span>著录用文字</h2>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.1</span>语种</div>
+      <p>参考文献应用信息资源本身的语种著录。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">博伯尔. 银行业的未来与人工智能[M]. 徐超, 译. 北京: 清华大学出版社, 2023: 35.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">図書館用語辞典編集委員会. 最新図書館用語大辞典[M]. 東京: 柏書房株式會社, 2004: 154.</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">Boobier T. AI and the future of banking[M]. Chichester: John Wiley &amp; Sons, 2020: 35.</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">Кочетков А Я. Молибден-медно-золото-порфировое месторождение Рябиновое [J]. Отечественная Геология, 1993 (7): 50-58.</span></div>
+      </div>
+      <div class="notes">
+        <div>四个示例分别是<b>中文、日文、英文、俄文</b>文献——原文是什么语种就按什么语种著录，不作翻译、不改字。</div>
+        <div>示例 1 为译著：原著者用中文译名，译者置于题名之后（<span class="mono">徐超, 译</span>）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.2</span>数字的著录</div>
+      <p>著录数字时，应保持信息资源原有的形式。但是，连续出版物卷期号、页码、出版年、创建或修改日期、引用日期、顺序编码制的参考文献序号等宜用阿拉伯数字著录，其中日期著录应符合 GB/T 7408.1 中的有关规定。</p>
+      <div class="notes">
+        <div>两句话是一般与例外的关系：<b>一般保持原文数字形式</b>；<b>但</b>卷期号、页码、出版年、创建/修改日期、引用日期、顺序编码制的序号<b>宜改用阿拉伯数字</b>。</div>
+        <div>日期格式另受 <span class="mono">GB/T 7408.1</span>（数据元和交换格式 信息交换 日期和时间表示法）约束，本页 7.5.4.2、7.6 里的 <span class="mono">YYYY-MM-DD</span> 即由此而来。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.3</span>中国人姓名的汉语拼音</div>
+      <p>使用汉语拼音著录中国人姓名时，宜使用 GB/T 28039 给出的规则拼写。</p>
+      <div class="notes">
+        <div><span class="mono">GB/T 28039</span> 即《中国人名汉语拼音字母拼写规则》。</div>
+        <div>本页可对照的写法：<b>姓全大写、名可缩写取每字拼音首字母</b>，如 <span class="mono">Li Jiangning → LI J N</span>（见标准"著录规定更改"部分 d 项所述的 5.3 规定）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.4</span>可按国际公认方法缩写的部分</div>
+      <p>作为集体责任者的机关团体名称（见 7.1.4、9.3.1.1）、出版信息中附在出版地之后的省名、州名、国名等（见 7.5.2.1）以及出版者（见 7.5.3.1）可按国际公认的方法缩写。</p>
+      <div class="notes">
+        <div>本条把三处可缩写的地方集中说明，正好对应本页已填的三节：</div>
+        <div>　· 机关团体名称 → 7.1.4（如 <span class="mono">Stanford University. Department of Civil Engineering</span>）</div>
+        <div>　· 出版地后的省/州/国名限定语 → 7.5.2.1（如 <span class="mono">Cambridge, Eng.</span>、<span class="mono">Taizhou, Zhejiang</span>）</div>
+        <div>　· 出版者 → 7.5.3.1（如 <span class="mono">International Rice Research Institute → IRRI</span>）</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.5</span>西文期刊刊名缩写</div>
+      <p>西文期刊刊名的缩写可使用 ISO 4 给出的规则。</p>
+      <div class="notes">
+        <div><span class="mono">ISO 4</span> 即《信息和文献 出版物题名和标题缩写规则》。示例可对照 7.2.1 示例 7 <span class="mono">J Math Phys</span>（刊名缩写形式）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">5.6</span>西文文献的字母大小写</div>
+      <p>著录西文文献时，大写字母的使用应符合信息资源本身文种的习惯用法。</p>
+      <div class="notes">
+        <div>即按该文种的习惯写，不强行统一大小写规则；与 7.1.1 的"用西文著录个人责任者，姓应全部著录，首字母应大写"配合使用。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>第 5 章 5.1–5.6 的条款正文与 4 个示例（5.1 示例 1–4），由本页使用者提供的标准原文录入（未经改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 文献类型标识速查 ===== -->
+  <section class="panel" id="sec-annexA">
+    <h2><span class="no">附录 A</span>文献类型与载体标识代码</h2>
+
+    <h3>A.1 文献类型标识代码</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>代码</th><th>文献类型</th><th>代码</th><th>文献类型</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">M</td><td>图书（2015 版称"普通图书"）</td><td class="mono">S</td><td>标准</td></tr>
+          <tr><td class="mono">J</td><td>期刊</td><td class="mono">P</td><td>专利</td></tr>
+          <tr><td class="mono">N</td><td>报纸</td><td class="mono">EB</td><td>网站、网页（2015 版为"电子公告"）</td></tr>
+          <tr><td class="mono">C</td><td>会议录</td><td class="mono">A</td><td>档案</td></tr>
+          <tr><td class="mono">D</td><td>学位论文</td><td class="mono">CM</td><td>地图（2015 版称"舆图"）</td></tr>
+          <tr><td class="mono">R</td><td>报告</td><td class="mono">DS</td><td>数据集</td></tr>
+          <tr><td class="mono">PP</td><td>预印本（2025 版新增）</td><td class="mono">G</td><td>汇编</td></tr>
+          <tr><td class="mono">CP</td><td>计算机程序</td><td class="mono">DB</td><td>数据库</td></tr>
+          <tr><td class="mono">Z</td><td>其他</td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src"><b>来源：</b>标准附录 A 表 A.1，经多个独立来源核对一致（含标准扫描件 OCR 文本与高校图书馆解读页）。</p>
+
+    <h3>A.2 电子资源载体标识代码</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th>代码</th><th>载体类型</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">MT</td><td>磁带 magnetic tape</td></tr>
+          <tr><td class="mono">DK</td><td>磁盘 disk</td></tr>
+          <tr><td class="mono">CD</td><td>光盘 CD-ROM</td></tr>
+          <tr><td class="mono">OL</td><td>联机网络 online</td></tr>
+          <tr><td class="mono">MM</td><td>缩微资料 microform materials（2025 版新增）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src"><b>来源：</b>标准附录 A 表 A.2，经多个独立来源核对一致。</p>
+  </section>
+
+  <!-- ===== 8.1 通用要求 ===== -->
+  <section class="panel" id="sec-8.1">
+    <h2><span class="no">8.1</span>通用要求</h2>
+
+    <div class="clause">
+      <div class="t">编制体例与著者-出版年制的转换</div>
+      <p>本章所有文献类型著录格式与示例均按照顺序编码制组织。<br>采用著者-出版年制标注参考文献时，各种文献类型的著录格式应仿照本章所规定的著录格式与示例，但应将出版年（见 7.5.1、7.5.4.1）置于责任者之后，并以"，"分隔。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 张伯伟，2002. 全唐五代诗格汇考[M]. 南京：江苏古籍出版社，288.</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 程根伟，1999. 1998 年长江洪水的成因与减灾对策[M]//许厚泽，赵其国. 长江流域洪涝灾害与科技对策. 北京:科学出版社，32-36.</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 杨洪升，2013. 四库馆私家抄校书考略[J]. 文献，（1）：56-75.</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Caplan P, 1993. Cataloging internet resources[J]. The Public-access Computer Systems Review, 4 (2): 61-66.</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] Christou A, 2024. Improving knowledge graph understanding with contextual views[D/OL]. Ohio: Wright State University: 18. http://rave.ohiolink.edu/etdc/view?acc_num=wright1715878159408301.</span></div>
+      </div>
+      <div class="notes">
+        <div><b>这 5 个示例都是著者-出版年制写法</b>，可与后面的顺序编码制示例对照：差别就在<b>出版年紧跟责任者之后、用逗号分隔</b>——如 <span class="mono">张伯伟，2002.</span>（顺序编码制作 <span class="mono">张伯伟. 全唐五代诗格汇考[M]. 南京：江苏古籍出版社，2002：288.</span>）。</div>
+        <div>改成著者-出版年制后，<b>引文页码也跟着出版年走、用逗号分隔</b>：示例 1 作 <span class="mono">南京：江苏古籍出版社，288.</span>，示例 2 作 <span class="mono">北京:科学出版社，32-36.</span>——即出版地、出版者、出版年、页码之间都用逗号；而示例 5 的学位论文（原本不是"出版地：出版者"结构）仍保留 <span class="mono">Ohio: Wright State University: 18.</span> 的冒号写法。</div>
+        <div>示例均带 <span class="mono">[1]</span>–<span class="mono">[5]</span> 序号，对应顺序编码制的编号方式；正文标注规则见本页第 9 章。</div>
+        <div>西文作者同样只写姓：<span class="mono">Caplan P, 1993.</span>、<span class="mono">Christou A, 2024.</span>。</div>
+      </div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.1 的条款正文与全部 5 个示例，由本页使用者提供的标准原文录入（未经改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 8.2 图书 ===== -->
+  <section class="panel" id="sec-8.2">
+    <h2><span class="no">8.2</span>图书 <span class="tag">2015 版称"专著"</span></h2>
+
+    <h3>8.2.1 著录项目</h3>
+    <p class="lead">图书应按表 1 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 1　图书著录项目</caption>
+        <thead><tr><th style="width:auto">元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>其他责任者</td><td>可选</td><td class="mono">7.1</td></tr>
+          <tr><td>版本</td><td>有则必备</td><td class="mono">7.4</td></tr>
+          <tr><td>出版地</td><td>有则必备</td><td class="mono">7.5.2</td></tr>
+          <tr><td>出版者</td><td>有则必备</td><td class="mono">7.5.3</td></tr>
+          <tr><td>出版年</td><td>有则必备</td><td class="mono">7.5.4</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.2.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. 其他责任者. 版本. 出版地:出版者,出版年:引文页码. 获取和访问路径. 永久标识符.</span></div>
+
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 张伯伟. 全唐五代诗格汇考[M]. 南京: 江苏古籍出版社, 2002: 288.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 王夫之. 宋论[M]. 刻本. 金陵: 湘乡曾国荃, 1865（清同治四年）.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 顾炎武. 昌平山水记; 京东考古录[M]. 北京: 北京古籍出版社, 1980.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] 康熙字典: 巳集上 水部[M]. 影印本. 北京: 中华书局, 1962: 50.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] 扬奎斯特, 萨金特. 递归宏观经济理论[M]. 杨斌, 王忠玉, 陈彦斌, 等, 译. 2版. 北京: 中国人民大学出版社, 2010: 798.</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">[6] Peebles P Z Jr. Probability, random variables, and random signal principles[M]. 4th ed. New York: McGraw-Hill, 2001.</span></div>
+      <div class="eg"><span class="lb">示例 7</span><span class="tx">[7] Praetzellis A. Death by theory: a tale of mystery and archaeological theory [M/OL]. Rev. ed. [S. l.]: Rowman &amp; Littlefield Publishing Group, Inc., 2011: 13. http://lib.myilibrary.com/Open.aspx?id=293666.</span></div>
+      <div class="eg"><span class="lb">示例 8</span><span class="tx">[8] Abadia O M, Conkey M W, McDonald J. Deep-time images in the age of globalization: rock art in the 21st century [M/OL]. Springer Cham, 2024. https://doi.org/10.1007/978-3-031-54638-9.</span></div>
+    </div>
+
+    <div class="notes">
+      <div>格式串里的符号对应关系：题名与其他题名信息之间用<b>冒号</b>（示例 7 <span class="mono">Death by theory: a tale of…</span>）、出版地与出版者之间用<b>冒号</b>、出版者与出版年之间用<b>逗号</b>、出版年与引文页码之间用<b>冒号</b>。</div>
+      <div>示例 2、示例 4 的<b>版本</b>按 7.4 作古籍版本照录：<span class="mono">刻本</span>、<span class="mono">影印本</span>；示例 2 的出版年保留原纪年 <span class="mono">1865（清同治四年）</span>。</div>
+      <div>示例 5 为译著，且译者超过 3 人——<span class="mono">杨斌, 王忠玉, 陈彦斌, 等, 译</span>（对应 7.1.2"超过 3 个加等"）。</div>
+      <div>示例 1–4 未写出版者与出版年之间的空格，示例 5–8 在西文标点后留空格；原样保留，未作统一（中英文标点习惯不同，见 5.6）。</div>
+      <div>示例 7 为电子图书 [M/OL]，出版地作 <span class="mono">[S. l.]</span>（对应 7.5.2.3"外文文献可著录 S.l."），路径与出版物同著录；示例 8 以 DOI 作为永久标识符结尾（对应 7.9.2）。</div>
+      <div>示例 8 的 <span class="mono">theory [M/OL]</span> 方括号前有一个空格，照原文保留。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.2.1 表 1、8.2.2 著录格式与全部 8 个实例，由本页使用者提供的标准原文录入（未经改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 8.3 图书中的析出文献 ===== -->
+  <section class="panel" id="sec-8.3">
+    <h2><span class="no">8.3</span>图书中的析出文献</h2>
+
+    <h3>8.3.1 著录项目</h3>
+    <p class="lead">图书中的析出文献应按表 2 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 2　图书中的析出文献著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>析出文献主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>析出文献题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>析出文献其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>析出文献其他责任者</td><td>可选</td><td class="mono">7.1</td></tr>
+          <tr><td>图书主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>图书题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>版本</td><td>有则必备</td><td class="mono">7.4</td></tr>
+          <tr><td>出版地</td><td>有则必备</td><td class="mono">7.5.2</td></tr>
+          <tr><td>出版者</td><td>有则必备</td><td class="mono">7.5.3</td></tr>
+          <tr><td>出版年</td><td>有则必备</td><td class="mono">7.5.4</td></tr>
+          <tr><td>析出文献页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.3.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">析出文献主要责任者. 析出文献题名:析出文献其他题名信息[文献类型标识/文献载体标识]. 析出文献其他责任者//图书主要责任者. 图书题名:其他题名信息. 版本. 出版地:出版者,出版年:析出文献页码. 获取和访问路径. 永久标识符.</span></div>
+
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 阿扬. 谈谈记忆：与诺贝尔获奖得者埃里克·坎德尔的问答[M]. 姜海伦, 译//《环球科学》杂志社. 认识记忆力：关于学习、思考与遗忘的脑科学. 北京: 机械工业出版社, 2023: 15-18.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 周易外传：卷5[M]//王夫之. 船山全书：第1册. 修订版. 长沙: 岳麓书社, 2011: 983-1029.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 马克思. 政治经济学批判[M]//马克思, 恩格斯. 马克思恩格斯全集：第35卷. 2版. 北京: 人民出版社, 2013: 302.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Weinstein L, Swartz M N. Pathogenic properties of invading microorganisms[M]//Sodeman W A Jr, Sodeman W A. Pathologic physiology: mechanisms of disease. 5th ed. Philadelphia: Saunders, 1974: 457-472.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] Roberson J A, Burneson E G. Drinking water quality standards, regulations and goals [M/OL] //American Water Works Association. Water quality &amp; treatment: a handbook on drinking water. 6th ed. New York: McGraw-Hill, 2011: 1. 1-1. 36. http://lib.myilibrary.com/Open.aspx?id=291430.</span></div>
+    </div>
+
+    <div class="notes">
+      <div>核心特征是<b>双层结构</b>：析出文献在前，用 <span class="mono">//</span> 引出<b>图书</b>（出处）。示例 2 的析出文献无独立责任者，直接以题名起头、方括号后紧接 <span class="mono">//</span>。</div>
+      <div>示例 1 的译者位置对应格式串里的"析出文献其他责任者"：<span class="mono">姜海伦, 译//《环球科学》杂志社.</span>——<b>译者写在 <span class="mono">//</span> 之前</b>。</div>
+      <div>示例 3 两层责任者都著录：<span class="mono">马克思. 政治经济学批判[M]//马克思, 恩格斯. 马克思恩格斯全集：第35卷.</span></div>
+      <div>示例 2、3、4 都含<b>版本</b>（<span class="mono">修订版</span>、<span class="mono">2版</span>、<span class="mono">5th ed.</span>），可对照 7.4。</div>
+      <div>示例 5 为电子图书 [M/OL]：<span class="mono">//</span> 前后各有一个空格，页码作 <span class="mono">1. 1-1. 36.</span>，URL 作 <span class="mono">Open.aspx?id=291430</span>（问号后有空格）——均与所给原文一致。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.3.1 表 2、8.3.2 著录格式与全部 5 个实例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 8.4 连续出版物 ===== -->
+  <section class="panel" id="sec-8.4">
+    <h2><span class="no">8.4</span>连续出版物 <span class="tag">整刊著录</span></h2>
+
+    <h3>8.4.1 著录项目</h3>
+    <p class="lead">连续出版物应按表 3 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 3　连续出版物著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>年卷期或其他标识</td><td>有则必备</td><td class="mono">8.5.1</td></tr>
+          <tr><td>出版地</td><td>有则必备</td><td class="mono">7.5.2</td></tr>
+          <tr><td>出版者</td><td>有则必备</td><td class="mono">7.5.3</td></tr>
+          <tr><td>出版年</td><td>有则必备</td><td class="mono">7.5.4</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.4.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. 年,卷(期)—年,卷(期). 出版地:出版者,出版年. 获取和访问路径. 永久标识符.</span></div>
+
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 中华医学会湖北分会. 临床内科杂志[J]. 1984, 1 (1) —. 武汉: 中华医学会湖北分会, 1984—.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 中国图书馆学会. 图书馆学通讯[J]. 1957 (1) —1990 (4). 北京: 北京图书馆, 1957—1990.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] American Association for the Advancement of Science. Science[J]. 1883, 1 (1) —. Washington, D. C.: American Association for the Advancement of Science, 1883—.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Public Library Quarterly [J/OL]. 1979, 1 (1) —. Philadelphia: Taylor &amp; Francis, 1979—. http://www.tandfonline.com/journals/wplq20.</span></div>
+    </div>
+
+    <div class="notes">
+      <div>本条著录的是<b>整种连续出版物</b>（如期刊本身），不是其中的某篇文章——后者见 8.5。责任者为该刊的主办机构。</div>
+      <div>要害在<b>年卷期的起止表示法</b>：格式串作"年,卷(期)—年,卷(期)"，示例中用一个<b>一字线"—"</b>表示延续——示例 1、3、4 是"起于某年卷期、仍在出版"（<span class="mono">1984, 1 (1) —.</span>、<span class="mono">1883—.</span>），示例 2 是"起止都已确定"（<span class="mono">1957 (1) —1990 (4).</span>、<span class="mono">1957—1990.</span>）。</div>
+      <div>示例 3 的出版地作 <span class="mono">Washington, D. C.</span>（字母间有空格），示例 4 的刊名与标识之间有一个空格（<span class="mono">Quarterly [J/OL]</span>）——均与所给原文一致。</div>
+      <div>示例 4 为电子资源 [J/OL]，著录了获取和访问路径（对应 7.8）。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.4.1 表 3、8.4.2 著录格式与全部 4 个实例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 8.5 连续出版物中的析出文献 ===== -->
+  <section class="panel" id="sec-8.5">
+    <h2><span class="no">8.5</span>连续出版物中的析出文献 <span class="tag">最常用：期刊/报纸论文</span></h2>
+
+    <h4 class="sub-h">8.5.1 通用要求</h4>
+
+    <div class="clause sub">
+      <div class="t"><span class="no">8.5.1.1</span>年、卷、期、页码的位置与各种情形</div>
+      <p>凡是从期刊中析出的文章，应在刊名之后注明其年、卷、期、页码等。阅读型参考文献的页码可著录文章的起讫页或起始页，引文参考文献的页码应著录引用信息所在页。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例 1</span><span class="tx">2001, 2 (1): 5-6</span><span class="ori">年, 卷 (期): 页码</span></div>
+        <div class="eg"><span class="lb">示例 2</span><span class="tx">2014, 510: 356-363</span><span class="ori">年, 卷: 页码（无期）</span></div>
+        <div class="eg"><span class="lb">示例 3</span><span class="tx">2010 (6): 23</span><span class="ori">年 (期): 页码（无卷）</span></div>
+        <div class="eg"><span class="lb">示例 4</span><span class="tx">2012, 22 (增刊2): 81-86</span><span class="ori">年, 卷 (增刊): 页码</span></div>
+        <div class="eg"><span class="lb">示例 5</span><span class="tx">2024, 12 (S1): 7-11</span><span class="ori">年, 卷 (期): 页码（西文刊）</span></div>
+        <div class="eg"><span class="lb">示例 6</span><span class="tx">2023, 267: 147370</span><span class="ori">年, 卷: 文章编号</span></div>
+        <div class="eg"><span class="lb">示例 7</span><span class="tx">2024-05-09</span><span class="ori">在线出版日期</span></div>
+      </div>
+      <div class="notes">
+        <div>注 1（原文）："2001"代表"年"，"2"代表"卷"，"1"代表"期"，"5-6"代表"页码"。</div>
+        <div>注 2（原文）："2014"代表"年"，"510"代表"卷"，"356-363"代表"页码"。</div>
+        <div>注 3（原文）："2010"代表"年"，"6"代表"期"，"23"代表"页码"。</div>
+        <div>注 4（原文）："2012"代表"年"，"22"代表"卷"，"增刊2"代表"期"，"81-86"代表"页码"。</div>
+        <div>注 5（原文）："2024"代表"年"，"12"代表"卷"，"S1"代表"期"，"7-11"代表"页码"。</div>
+        <div>注 6（原文）："2023"代表"年"，"267"代表"卷"，"147370"代表"<b>文章编号</b>"。</div>
+        <div>注 7（原文）："2024-05-09"代表"<b>在线出版日期</b>"。</div>
+        <div>用法提示：<b>有卷就写卷</b>（示例 1、2、4、5、6），<b>无卷只写年与期</b>（示例 3）；示例 6 用文章编号顶替页码（对应 7.7"无页码有文章编号的，应将文章编号按页码著录"），示例 7 用于只有在线出版日期的电子期刊（见 8.5.3 示例 4）。</div>
+      </div>
+    </div>
+
+    <div class="clause sub">
+      <div class="t"><span class="no">8.5.1.2</span>合期、合卷</div>
+      <p>对从合期、合卷中析出的文献，遵循上述规则著录，并在圆括号内注明合期号。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例</span><span class="tx">2001 (8/9/10): 36-39</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文）："2001"代表"年"，"8/9/10"代表"<b>合期号</b>"，"36-39"代表"页码"。</div>
+      </div>
+    </div>
+
+    <div class="clause sub">
+      <div class="t"><span class="no">8.5.1.3</span>同一期刊上的连载文献</div>
+      <p>凡是在同一期刊上连载的文献，其后续部分不必另行著录，可在原参考文献后直接注明后续部分的年、卷、期、页码等。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例</span><span class="tx">2011, 33 (2): 20-25; 2011, 33 (3): 26-30</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文）："2011"代表"年"，"33"代表"卷"，"2"代表"期"，"20-25"代表"页码"；"2011"代表"年"，"33"代表"卷"，"3"代表"期"，"26-30"代表"页码"。</div>
+        <div>要点：续载部分与原文献<b>合为一条</b>，之间用<b>分号</b>隔开。</div>
+      </div>
+    </div>
+
+    <div class="clause sub">
+      <div class="t"><span class="no">8.5.1.4</span>报纸中的析出文献</div>
+      <p>凡是从报纸中析出的文献，应在报纸名后著录其出版日期与版次。</p>
+      <div class="egs">
+        <div class="eg"><span class="lb">示例</span><span class="tx">2013-03-16 (1)</span></div>
+      </div>
+      <div class="notes">
+        <div>注（原文）："2013-03-16"代表"<b>出版日期</b>"，"1"代表"<b>版次</b>"。</div>
+        <div>报纸用<b>出版日期</b>取代"年,卷(期)"，版次置于圆括号内（可对照 8.5.3 示例 1）。</div>
+      </div>
+    </div>
+
+    <h4 class="sub-h">8.5.2 著录项目</h4>
+    <p class="lead">连续出版物中的析出文献应按表 4 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 4　连续出版物中的析出文献著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>析出文献主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>析出文献题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>析出文献其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>析出文献其他责任者</td><td>可选</td><td class="mono">7.1</td></tr>
+          <tr><td>连续出版物题名</td><td>有则必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>年卷期/版次标识与页码等</td><td>有则必备</td><td class="mono">8.5.1</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4 class="sub-h">8.5.3 著录格式</h4>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">析出文献主要责任者. 析出文献题名:析出文献其他题名信息[文献类型标识/文献载体标识]. 析出文献其他责任者. 连续出版物题名:其他题名信息,年,卷(期/版次):页码. 获取和访问路径. 永久标识符.</span></div>
+
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 丁文详. 数字革命与竞争国际化[N]. 中国青年报, 2000-11-20 (15).</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 久保智康. 花枝蝶鸟方镜的镜范：以平安后期的铜镜制作工艺为中心[J]. 顾幼静, 译. 东方博物, 2009 (1): 85-92.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 于潇, 刘义, 柴跃廷, 等. 互联网药品可信交易环境中主体资质审核备案模式[J]. 清华大学学报（自然科学版）, 2012, 52 (11): 1518-1523.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] 张群, 程志宝, 石志飞. 惯性增强动力吸振器-浮置板轨道低频减振性能研究[J/OL]. 铁道学报, 2024-05-09. https://kns.cnki.net/kcms/detail/11.2104.u.20240507.1737.002.html.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] 张群, 程志宝, 石志飞. 惯性增强动力吸振器-浮置板轨道低频减振性能研究[J]. 铁道学报, 2024, 46 (8): 102-111.</span></div>
+      <div class="eg"><span class="lb">示例 6</span><span class="tx">[6] 徐建委. 历史的起点：《史记》中的时间设置及其意义[J/OL]. 北京大学学报（哲学社会科学版）, 2025, 62 (2): 117-127. https://ncpssd.org/Literature/articleinfo?id=BJDXXBZXXSHKXB2025002012&amp;synUpdateType=&amp;type=journalArticle&amp;typename=%E4%B8%AD%E6%96%87%E6%9C%9F%E5%88%8A%E6%96%87%E7%AB%A0&amp;nav=1&amp;langType=1&amp;pageUrl=https%253A%252F%252Fncpssd.org%252Fjournal%252Fdetails%253Fgch%253D81274X%2526nav%253D1%2526langType%253D1.</span></div>
+      <div class="eg"><span class="lb">示例 7</span><span class="tx">[7] 王利平, 王福新, 刘洪. 过冷大水滴环境粒径分布模拟方法研究进展[J]. 航空学报, 2024, 45 (增刊1): 730570.</span></div>
+      <div class="eg"><span class="lb">示例 8</span><span class="tx">[8] Saito M, Miyazaki K. Jadeite-bearing metagabbro in serpentinite melange of the “Kurosegawa Belt” in Izumi Town, Yatsushiro City, Kumamoto Prefecture, central Kyushu[J]. Bulletin of the Geological Survey of Japan, 2006, 57 (5/6): 169-176.</span></div>
+      <div class="eg"><span class="lb">示例 9</span><span class="tx">[9] Myburg A A, Grattapaglia D, Tuskan G A, et al. The genome of Eucalyptus grandis [J/OL]. Nature, 2014, 510: 356-362. https://www.nature.com/articles/nature13308.pdf.DOI:10.1038/nature13308.</span></div>
+      <div class="eg"><span class="lb">示例 10</span><span class="tx">[10] Veen P H v d, Muller M, Vincken K L, et al. Longitudinal changes in brain volumes and cerebrovascular lesions on MRI in patients with manifest arterial disease: the SMART-MR study[J/OL]. J Neurol Sci, 2014, 337 (1/2): 112-118. https://pubmed.ncbi.nlm.nih.gov/24314719/. DOI:10.1016/j.jns.2013.11.029.</span></div>
+    </div>
+
+    <div class="notes">
+      <div>格式串的读法：<b>析出文献</b>（责任者 + 题名 + 标识）在前，随后是<b>连续出版物题名</b>，再接"<b>年,卷(期/版次):页码</b>"。示例 3 <span class="mono">…[J]. 清华大学学报（自然科学版）, 2012, 52 (11): 1518-1523.</span>正合此序。</div>
+      <div>示例 1 为报纸 [N]：用<b>出版日期 + 版次</b>替代年卷期（<span class="mono">中国青年报, 2000-11-20 (15).</span>），对应 8.5.1.4。</div>
+      <div>示例 4 与示例 5 是<b>同一篇文章的两个版本</b>：示例 4 为网络首发（[J/OL]，只有在线出版日期与 URL），示例 5 为正式刊出（[J]，有年卷期与页码）——很适合用来理解 8.5.1.1 示例 7 那种"只有在线出版日期"的写法。</div>
+      <div>示例 2 显示<b>译者位置</b>：<span class="mono">…[J]. 顾幼静, 译. 东方博物, 2009 (1): 85-92.</span>——与 8.3 图书中的析出文献不同，这里译者在方括号之后、刊名之前。</div>
+      <div>示例 8 为合期（<span class="mono">57 (5/6)</span>）、示例 10 同为合期（<span class="mono">337 (1/2)</span>），对应 8.5.1.2；示例 7 用<b>增刊</b>与<b>文章编号</b>（<span class="mono">45 (增刊1): 730570</span>），对应 8.5.1.1 示例 4、6。</div>
+      <div>示例 9、10 的西文责任者超过 3 人用 <span class="mono">et al.</span>（对应 7.1.2）；两例的永久标识符前用 <span class="mono">.DOI:</span> 直接连接（<span class="mono">nature13308.pdf.DOI:10.1038/…</span>）——与所给原文一致。</div>
+      <div>示例 6 的 URL 携带了编码后的查询串（含 <span class="mono">%253A%252F</span> 等双重编码）与查询参数分隔符 <span class="mono">&amp;nav=1</span>，<b>完整照录</b>，未作简化。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.5.1（8.5.1.1–8.5.1.4）、8.5.2 表 4、8.5.3 著录格式与全部 10 个实例，由本页使用者提供的标准原文录入（未作改写）；标注"（原文）"者为标准原有注释，其余"notes"为本页为便于使用而加的说明。</p>
+  </section>
+
+    <section class="panel" id="sec-8.6">
+    <h2><span class="no">8.6</span>会议录 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.6.1 通用要求</h3>
+    <p>凡以图书、图书中的析出文献、连续出版物、连续出版物中的析出文献形式出现的会议录，其著录项目与著录格式应分别按 8.2～8.5 中的有关规则处理。除此之外的会议录应按 8.6.3 著录。</p>
+    <div class="notes">
+      <div>即：会议录若以图书、图书中的析出文献、连续出版物等形式出现，就按 8.2–8.5 的既有规则著录（示例 1–3 属这类）；其余情况才用 8.6.3 的单列格式（示例 4、5 属这类）。</div>
+    </div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 牛志明，Swingland I R，雷光春. 综合湿地管理：综合湿地管理国际研讨会论文集[C]. 北京：海洋出版社，2012.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 汪学军. 中国农业转基因生物研发进展与安全管理[C]//国家环境保护总局生物安全管理办公室. 中国国家生物安全框架实施国际合作项目研讨会论文集. 北京：中国环境科学出版社，2005：22-25.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 肖希明，石庆功，刘奕. 民国图书馆学教育的社会贡献[C]//纪念北京大学图书馆学教育100周年研讨会论文集. 北京：北京大学信息管理系，2024：134-147.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Yufin S A. Geoecology and computers: proceedings of the Third International Conference on Advances of Computer Methods in Geotechnical and Geoenvironmental Engineering, Moscow, Russia, February 1-4, 2000[C]. Rotterdam: A. A. Balkema, 2000.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] Fourney M E. Advances in holographic photoelasticity[C]//Gottenberg W G. Symposium on Applications of Holography in Mechanics, August 23-25, 1971, University of Southern California, Los Angeles, California. New York: ASME, 1971: 17-38.</span></div>
+    </div>
+    <div class="notes">
+      <div>示例 1 是"以图书形式出现"的会议录（论文集整体），示例 2、3 是"以图书中的析出文献形式出现"（<span class="mono">//</span> 后为论文集），均按 8.2、8.3 著录。</div>
+      <div>示例 4 是"以图书形式出现"的西文会议录（含会议时间地点写在题名中）；示例 5 是 <span class="mono">//</span> 后接会议录的析出形式。两者都体现了会议录可按多种形式出现这一前提。</div>
+    </div>
+
+    <h3>8.6.2 著录项目</h3>
+    <p class="lead">会议录应按表 5 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 5　会议录著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>会议名称</td><td>有则必备</td><td class="mono">—</td></tr>
+          <tr><td>会议年份</td><td>有则必备</td><td class="mono">—</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>注意：<b>会议名称</b>与<b>会议年份</b>的相关章条号为"—"，即由本条自行规定，不引 7 章其他条。</div>
+    </div>
+
+    <h3>8.6.3 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]//会议名称,会议年份:引文页码. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 李妍，王莹. 医疗机构保洁人员"一前五后"手卫生干预效果研究[C]//中华预防医学会医院感染控制分会第31次全国医院感染学术年会, 2022: 2.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] Wang Shanshan. Application of improved SOM neural network in intelligent auditing of hospital financial-vouchers[C/OL]//2022 6th Asian Conference on Artificial Intelligence Technology, 2022: 2. https://ieeexplore.ieee.org/document/10137867. DOI:10.1109/ACAIT56212.2022.10137867.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] Yu Yang, Pan Erting, Wang Xinya, et al. Unmixing before fusion: a generalized paradigm for multi-source-based hyperspectral image synthesis[C/OL]//CVPR, 2024: 4. https://openaccess.thecvf.com/content/CVPR2024/html/Yu_Unmixing_Before_Fusion_A_Generalized_Paradigm_for_Multi-Source-based_Hyperspectral_Image_CVPR_2024_paper.html.</span></div>
+    </div>
+    <div class="notes">
+      <div>格式串读法：<b>题名之后用 <span class="mono">//</span> 直接引会议名称</b>，不像 8.3 那样先接图书责任者——这是会议录单列格式与"以图书形式出现的会议录"的关键差别。</div>
+      <div>示例 1 的会议名称与年份之间用半角逗号加空格（<span class="mono">…学术年会, 2022: 2.</span>），示例 2、3 相同。</div>
+      <div>示例 3 的责任者超 3 人用 <span class="mono">et al.</span>（对应 7.1.2）；会议名称仅作 <span class="mono">CVPR</span>。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.6.1–8.6.3 的条款正文、表 5 与全部 8 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.7">
+    <h2><span class="no">8.7</span>学位论文 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.7.1 著录项目</h3>
+    <p class="lead">学位论文应按表 6 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 6　学位论文著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>学位授予单位所在地</td><td>有则必备</td><td class="mono">7.5.1、7.5.2</td></tr>
+          <tr><td>学位授予单位</td><td>必备</td><td class="mono">7.5.1、7.5.3</td></tr>
+          <tr><td>学位授予年</td><td>有则必备</td><td class="mono">7.5.1、7.5.4</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>本表的"出版信息"三项被替换为<b>学位授予单位所在地、学位授予单位、学位授予年</b>，各自的相关章条号都含 7.5.1（对应 7.5.1 通用要求里那条"学位论文中的学位授予单位所在地、学位授予单位、学位授予年"）。</div>
+      <div><b>学位授予单位是"必备"</b>（所在地与年份为有则必备），且 2025 版<b>要求标注具体引用页码</b>（示例中均带页码，如 <span class="mono">2022：87.</span>）。</div>
+    </div>
+
+    <h3>8.7.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. 学位授予单位所在地:学位授予单位,学位授予年:引文页码. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 王琦. 融合星载GNSS-R和SAR数据的高时空分辨率土壤湿度反演方法研究[D]. 武汉：武汉大学，2022：87.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 金燕萍. 社交媒体时代的虚假信息研究[D/OL]. 温州：温州大学，2020：16. https://d.wanfangdata.com.cn/thesis/D02216281.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 井丽南. 支持状态可编程的SDN交换机关键技术研究[D/OL]. 北京：中国科学院大学，2022：43. http://dpaper.las.ac.cn/Dpaper/detail/detailNew?paperID=20209289. CSTR:35001.37.01.33142.20220037.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Cairns B R. Infrared spectroscopic studies of solid oxygen[D]. Berkeley: University of California, Berkeley, 1965: 15.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] Christou A. Improving knowledge graph understanding with contextual views[D/OL]. Ohio: Wright State University, 2024: 18. http://rave.ohiolink.edu/etdc/view?acc_num=wright1715878159408301.</span></div>
+    </div>
+    <div class="notes">
+      <div>与图书（8.2）的写法对照：书店"出版地：出版者，出版年：页码"，学位论文是"<b>学位授予单位所在地：学位授予单位，学位授予年：引文页码</b>"——形似但概念不同（示例 1 <span class="mono">武汉：武汉大学，2022：87.</span>）。</div>
+      <div>示例 3 用 <b>CSTR</b> 作永久标识符、置于路径之后（对应 7.9.2）；示例 2、5 为 [D/OL] 电子资源，著录了获取和访问路径。</div>
+      <div>示例 5 与 8.1 示例 5 是同一篇论文的两种编制体例写法，可互相对照。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.7.1 表 6、8.7.2 著录格式与全部 5 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.8">
+    <h2><span class="no">8.8</span>报告 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.8.1 通用要求</h3>
+    <p>凡以图书、图书中的析出文献、连续出版物、连续出版物中的析出文献形式出现的报告，其著录项目与著录格式应分别按 8.2～8.5 中的有关规则处理。除此之外的报告应按 8.8.3 著录。</p>
+
+    <h3>8.8.2 著录项目</h3>
+    <p class="lead">报告应按表 7 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 7　报告著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>报告编号</td><td>有则必备</td><td class="mono">—</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>发布日期</td><td>有则必备</td><td class="mono">7.5.1、7.5.4</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div><b>报告编号</b>的相关章条号为"—"（由本条自定）；<b>发布日期</b>取代出版年，引 7.5.1、7.5.4。</div>
+      <div>注意报告中<b>没有"出版地/出版者"</b>两项——与图书类著录最大的不同。</div>
+    </div>
+
+    <h3>8.8.3 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息:报告编号[文献类型标识/文献载体标识]. 发布日期:引文页码. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 汤万金，杨跃翔，刘文，等. 人体安全重要技术标准研制最终报告：7178999X-2006BAK04A10/10.2013[R/OL]. 2013-09-30. http://www.nstrs.cn/xiangxiBG.aspx?id=41707.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 中国信息通信研究院，中国电信股份有限公司研究院，中国移动通信研究院，等. 电信业发展白皮书：2023：新时代高质量发展探索[R/OL]. 2023-12-28. http://www.caict.ac.cn/kxyj/qwfb/bps/202312/P020240326615399026294.pdf.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] Calkin D E, Ager A A, Thompson M P, et al. A comparative risk assessment framework for wildland fire management: the 2010 cohesive strategy science report: RMRS-GTR-262[R/OL]. 2011: 8-9. https://www.fs.usda.gov/rm/pubs/rmrs_gtr262.pdf.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] U.S. Department of Transportation Federal Highway Administration. Guidelines for handling excavated acid-producing materials: PB 91-194001[R]. Springfield: U.S. Department of Commerce National Information Service, 1990: 25.</span></div>
+    </div>
+    <div class="notes">
+      <div>格式串里<b>报告编号接在题名（及其他题名信息）之后、用冒号引出</b>：示例 1 <span class="mono">…最终报告：7178999X-2006BAK04A10/10.2013[R/OL].</span>；示例 4 <span class="mono">…materials: PB 91-194001[R].</span>。</div>
+      <div>示例 1、2 的<b>发布日期</b>为 <span class="mono">2013-09-30</span>、<span class="mono">2023-12-28</span>（对应 7.5.4.2 的 YYYY-MM-DD）；示例 3 是"有页码但未给日期"的写法（<span class="mono">2011: 8-9.</span>）。</div>
+      <div>示例 1 的 <span class="mono">10. 2013</span> 与 <span class="mono">aspx?id=41707</span>：<b>照所给原文录入</b>（编号本身为 <span class="mono">7178999X-2006BAK04A10/10.2013</span>，其中 <span class="mono">10.2013</span> 之间无空格）。</div>
+      <div>示例 2 的责任者含三个机构团体，超 3 个用"等"（对应 7.1.2）；示例 4 为纸本报告 [R]，出版信息按"出版地：出版者，出版年：页码"著录。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.8.1–8.8.3 的条款正文、表 7 与全部 4 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.9">
+    <h2><span class="no">8.9</span>标准 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.9.1 著录项目</h3>
+    <p class="lead">标准应按表 8 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 8　标准著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>标准编号</td><td>必备</td><td class="mono">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 8　标准著录项目（续）</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>标准名称</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>文献类型标识<sup class="fn">a</sup></td><td>必备/可选</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div><b>表 8 分两段列出</b>（所给原文即分"表 8"与"表 8（续）"），此处照原样分为两张表。</div>
+      <div><sup class="fn">a</sup>（原文注）：标准化文件中"文献类型标识"为可选项。</div>
+      <div>标准是唯一以<b>"标准编号"起头</b>的类型——没有责任者项，也没有出版地/出版者项。</div>
+    </div>
+
+    <h3>8.9.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">标准编号 标准名称[文献类型标识/文献载体标识]. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] GB/T 3792—2021 信息与文献 资源描述[S].</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] NB/T 10386—2020 水电工程水温实时监测系统技术规范[S].</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] GB/T 20090.16—2016 信息技术 先进音视频编码 第16部分：广播电视视频[S/OL]. http://c.gb688.cn/bzgk/gb/showGb?type=online&amp;hcno=1D4AC2D4256C8DE7E0AA286CA7649300.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] ISO 21378: 2019 Audit data collection[S].</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] IEC/IEEE 61636-1: 2021 Software interface for maintenance information collection and analysis (SIMICA): exchanging test results and session information via the eXtensible Markup Language (XML) [S].</span></div>
+    </div>
+    <div class="notes">
+      <div><b>2025 版的关键变化</b>：标准改为以"<b>标准编号 标准名称</b>"起头（2015 版按责任者起头）。示例 1 <span class="mono">GB/T 3792—2021 信息与文献 资源描述[S].</span>——编号与名称之间用空格，编号中的年份用<b>一字线 —</b>。</div>
+      <div>示例 3 为 [S/OL]：编号、名称后接获取和访问路径（对应 7.8）；示例 4、5 为国际标准，写法与国标一致（<span class="mono">ISO 21378: 2019 …</span>、<span class="mono">IEC/IEEE 61636-1: 2021 …</span>，注意编号与年份之间用冒号）。</div>
+      <div>示例 5 名称较长且含副题名成分（<span class="mono">… (SIMICA): exchanging test results …</span>），方括号前有一个空格——照所给原文。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.9.1 表 8（含续表）、8.9.2 著录格式与全部 5 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.10">
+    <h2><span class="no">8.10</span>专利</h2>
+
+    <h3>8.10.1 著录项目</h3>
+    <p class="lead">专利应按表 9 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 9　专利著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>专利申请者/所有者</td><td>必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>专利申请号</td><td>必备</td><td class="mono">—</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>公告日期或公开日期</td><td>有则必备</td><td class="mono">7.5.1、7.5.4.2</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 9　专利著录项目（续）</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>表 9 同样分两段（"表 9"与"表 9（续）"），照原样分列。</div>
+      <div><b>专利申请者/所有者</b>与<b>专利申请号</b>都是"必备"；公告日期或公开日期引 7.5.4.2（即 YYYY-MM-DD 格式）。</div>
+    </div>
+
+    <h3>8.10.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">专利申请者/所有者. 题名:其他题名信息:专利申请号[文献类型标识/文献载体标识]. 公告(公开)日期:引文页码. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 邓一刚. 全智能节电器：CN200610171314.3[P]. 2008-01-16: 8-9.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 西安电子科技大学. 光折变自适应光外差探测方法：CN01128777.2[P/OL]. 2002-03-06. http://211.152.9.47/sipoasp/zljs/hyjs-yx-new.asp?recid=01128777.2&amp;leixin=0.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 中国科学院苏州生物医学工程技术研究所. 光コヒーレンス断層拡張現象に基づく手術顕微鏡撮像システム及び方法：JP2021578120A[P/OL]. 2022-09-13. https://pss-system.cponline.cnipa.gov.cn/documents/detail?prevPageTit=changgui.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Trisco Icap Pty Ltd. Storage and delivery system: AU2022228203A[P/OL]. 2022-10-06. https://worldwide.espacenet.com/patent/search/family/061561249/publication/AU2022228203A1?q=AU2022228203A.</span></div>
+    </div>
+    <div class="notes">
+      <div>专利号写法：示例 1、2 的申请号含"点分"校验位——<span class="mono">CN200610171314.3</span>、<span class="mono">CN01128777.2</span>，点号后直接接校验位，中间不留空格。</div>
+      <div>示例 1 为纸本专利 [P]，且著录了引文页码（<span class="mono">2008-01-16: 8-9.</span>）；示例 2–4 为 [P/OL]，著录获取和访问路径。</div>
+      <div>示例 3 的专利名称是日文（原文如此，对应 5.1"应用信息资源本身的语种著录"）。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.10.1 表 9（含续表）、8.10.2 著录格式与全部 4 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.11">
+    <h2><span class="no">8.11</span>网站、网页 <span class="tag">2025 版新增单列格式；[EB] 含义改变</span></h2>
+
+    <h3>8.11.1 通用要求</h3>
+    <p>凡以网页形式出现的图书、连续出版物、会议录、学位论文、报告、标准、专利、档案、地图、数据集、预印本，应按相应文献类型的规则著录。除此之外的网站、网页及其析出内容应按本条著录。</p>
+
+    <h3>8.11.2 网站</h3>
+    <h4 class="sub-h">8.11.2.1 著录项目</h4>
+    <p class="lead">网站应按表 10 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 10　网站著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>创建或修改日期</td><td>有则必备</td><td class="mono">7.6</td></tr>
+          <tr><td>引用日期</td><td>必备</td><td class="mono">7.6</td></tr>
+          <tr><td>获取和访问路径</td><td>必备</td><td class="mono">7.8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>网站的<b>文献载体标识为"必备"</b>（不同于其他类型只要求"电子资源必备"）；<b>引用日期为"必备"</b>、获取和访问路径也是"必备"。</div>
+      <div>表 10 <b>没有永久标识符项</b>——这正是网站与网页两张表的差别（见 8.11.3.1）。</div>
+    </div>
+
+    <h4 class="sub-h">8.11.2.2 著录格式</h4>
+    <div class="fmt"><span class="k">网站格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. (创建或修改日期)[引用日期]. 获取和访问路径.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 中国国家博物馆[EB/OL]. [2025-05-06]. https://www.chnmuseum.cn/.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] Library of Congress[EB/OL]. [2020-06-12]. https://www.loc.gov.</span></div>
+    </div>
+    <div class="notes">
+      <div>两个示例都<b>只有引用日期</b>（方括号）、没有创建或修改日期——因为无处可查（格式串中该项为"有则必备"）。</div>
+      <div><b>主体是机构名而无个人责任者</b>：<span class="mono">中国国家博物馆[EB/OL].</span>、<span class="mono">Library of Congress[EB/OL].</span>，即直接以题名起头。</div>
+      <div>取自 2025 版：<span class="mono">EB</span> 代表"网站、网页"（2015 版为"电子公告"）。</div>
+    </div>
+
+    <h3>8.11.3 网页</h3>
+    <h4 class="sub-h">8.11.3.1 著录项目</h4>
+    <p class="lead">网页应按表 11 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 11　网页著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>创建或修改日期</td><td>有则必备</td><td class="mono">7.6</td></tr>
+          <tr><td>引用日期</td><td>必备</td><td class="mono">7.6</td></tr>
+          <tr><td>获取和访问路径</td><td>必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>与表 10 相比，网页<b>多一项"永久标识符"（可选）</b>，其余各项完全一致。</div>
+    </div>
+
+    <h4 class="sub-h">8.11.3.2 著录格式</h4>
+    <div class="fmt"><span class="k">网页格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. (创建或修改日期)[引用日期]. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 高等教育文献保障系统. 馆际互借与文献传递服务[EB/OL]. [2025-06-21]. http://home.calis.edu.cn/pages/list.html?id=4101e184-7f64-4798-a5e1-8c37aa6994fc.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] [《昨日之歌》图书封面][EB/OL]. (2015-09-18) [2023-03-06]. http://www.luxunmuseum.com.cn/uploads/allimg/150813/1-150Q31952110-L.jpg.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 许振超："好好干，当一个好工人"[EB/OL]. (2025-02-17) [2025-06-22]. http://cpc.people.com.cn/n1/2025/0217/c443712-40419790.html.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] António M, Pepper L. Histórias de Portugal: livros caídos [EB/OL]. (2019-07-13) [2025-01-02]. https://arquivo.pt/wayback/20190905210731/http://publico.pt/2019/07/13/sociedade/noticia/podcast-historias-portugal-cuidadores-1879731.</span></div>
+      <div class="eg"><span class="lb">示例 5</span><span class="tx">[5] Zotero. [Zotero download][CP/OL]. [2024-04-08]. https://www.zotero.org/download/.</span></div>
+    </div>
+    <div class="notes">
+      <div>示例 1、5 只有引用日期；示例 2、3、4 兼有<b>创建或修改日期（圆括号）与引用日期（方括号）</b>——对应 7.6 的两类日期写法。</div>
+      <div>示例 2 的题名是<b>自拟题名</b>（<span class="mono">[《昨日之歌》图书封面]</span>，置于方括号内，对应 7.2.1）；示例 5 的题名同样自拟（<span class="mono">[Zotero download]</span>），且文献类型标识为 <span class="mono">[CP/OL]</span>（计算机程序）。</div>
+      <div>示例 4 的题名与标识之间有一个空格（<span class="mono">livros caídos [EB/OL]</span>），照所给原文。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.11.1–8.11.3.2 的条款正文、表 10、表 11 与全部 7 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.12">
+    <h2><span class="no">8.12</span>档案 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.12.1 通用要求</h3>
+    <p>凡以图书、图书中的析出文献形式出现的档案，其著录项目与著录格式应分别按 8.2、8.3 中的有关规则处理。除此之外的档案应按 8.12.3 著录。</p>
+
+    <h3>8.12.2 著录项目</h3>
+    <p class="lead">档案应按表 12 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 12　档案著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>档号</td><td>有则必备</td><td class="mono">—</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>收藏者所在地</td><td>有则必备</td><td class="mono">7.5.1、7.5.2</td></tr>
+          <tr><td>收藏者</td><td>有则必备</td><td class="mono">7.5.1、7.5.3</td></tr>
+          <tr><td>形成日期</td><td>有则必备</td><td class="mono">7.5.1、7.5.4</td></tr>
+          <tr><td>引文页码</td><td>有则必备</td><td class="mono">7.7</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div><b>档号</b>的相关章条号为"—"（由本条自定）；<b>收藏者所在地、收藏者、形成日期</b>三项各自都引 7.5.1——对应 7.5.1 通用要求里"档案中的收藏者所在地、收藏者、形成日期"那一条。</div>
+      <div>与学位论文（8.7）结构相似：都是把"出版信息"换成本领域的三项（学位论文是单位所在地/单位/年，档案是收藏者所在地/收藏者/形成日期）。</div>
+    </div>
+
+    <h3>8.12.3 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息:档号[文献类型标识/文献载体标识]. 收藏者所在地:收藏者,形成日期:引文页码. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 李鸿章. 奏请上海道库洋务外销要款无款可筹仍拨药厘接济事：04-01-35-0399-039[A]. 北京：中国第一历史档案馆，1887（光绪十三年三月十三日）.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 湖北省建设厅. 湖北省建设厅关于检发实业部农工矿业团体登记规则的布告、训令及湖北省政府的训令：LS031-001-0001-001[A/OL]. 武汉：湖北省档案馆，1931-11-07. https://www.hbda.gov.cn/pdf/LS031-001-0001-001.PDF.PDF.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 中国人民解放军武汉市军事管制委员会接管国立武汉大学的文告[A/OL]. 武汉：武汉大学档案馆，1949（中华民国三十八年八月）. https://archive.whu.edu.cn/index/forwardView/20/51.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Fitzwilliam H. [Letter to Bess of Hardwick][A/OL]. 1570-07-28. https://www.bessofhardwick.org/letter.jsp?letter=25.</span></div>
+    </div>
+    <div class="notes">
+      <div>格式串读法：<b>档号接在题名（及其他题名信息）之后、用冒号引出</b>，随后是"收藏者所在地：收藏者，形成日期：引文页码"。示例 1 <span class="mono">…接济事：04-01-35-0399-039[A]. 北京：中国第一历史档案馆，1887（光绪十三年三月十三日）.</span></div>
+      <div>示例 1、3 的<b>形成日期保留原纪年</b>：<span class="mono">1887（光绪十三年三月十三日）</span>、<span class="mono">1949（中华民国三十八年八月）</span>——对应 7.5.4.1"如有其他纪年形式时，应将原有的纪年形式置于（ ）内"。</div>
+      <div>示例 4 为西文信件：题名用<b>方括号自拟</b>（<span class="mono">[Letter to Bess of Hardwick]</span>，对应 7.2.1），且因无收藏者信息而直接从日期接路径。示例 2 的路径结尾作 <span class="mono">…001.PDF.PDF</span>，照所给原文。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.12.1–8.12.3 的条款正文、表 12 与全部 4 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.13">
+    <h2><span class="no">8.13</span>地图 <span class="tag">2015 版称"舆图"；2025 版新增单列格式</span></h2>
+
+    <h3>8.13.1 通用要求</h3>
+    <p>凡以图书、图书中的析出文献形式出现的地图，其著录项目与著录格式应分别按 8.2、8.3 中的有关规则处理。除此之外的地图应按 8.13.3 著录。</p>
+    <div class="notes">
+      <div>即：地图若以图书、图书中的析出文献形式出现，就按 8.2、8.3 著录（下面示例 1–4 都属这类）；其余情况才用 8.13.3 的单列格式。</div>
+      <div>注意区别：<b>8.13.1 的示例按 8.2、8.3 著录</b>（无比例尺、无尺寸），而 <b>8.13.3 的示例</b>才是单列格式（含比例尺与尺寸）。</div>
+    </div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 曾冬梅，高秀静. 内蒙古自治区地图册[CM]. 新版. 北京：中国地图出版社，2006.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 谭其骧. 中国历史地图集：第2册[CM]. 北京：地图出版社，1982：6.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] Cribb R. Historical atlas of Indonesia[CM]. Abingdon: Routledge, 2015.</span></div>
+      <div class="eg"><span class="lb">示例 4</span><span class="tx">[4] Coastal wetlands map of China continent[CM]//Coastal erosion and mitigation in east and southeast Asia. Beijing: China Ocean Press, 2024: 50.</span></div>
+    </div>
+    <div class="notes">
+      <div>示例 1、2 为地图册（[CM] 图书形式的图集），示例 3 为西文地图集，示例 4 为 <span class="mono">//</span> 后接出处的析出形式。</div>
+      <div><b>责任者姓名请注意</b>：示例 1 此处作"曾冬梅"，而本页较早一次录入（8.13.1 首次提供时）作"訾冬梅"——两次所给原文不同，本页按<b>本次原文</b>录入为"曾冬梅"，如需改回请告知。</div>
+    </div>
+
+    <h3>8.13.2 著录项目</h3>
+    <p class="lead">地图应按表 13 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 13　地图著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>比例尺</td><td>有则必备</td><td class="mono">—</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>版本</td><td>有则必备</td><td class="mono">7.4</td></tr>
+          <tr><td>出版地</td><td>有则必备</td><td class="mono">7.5.2</td></tr>
+          <tr><td>出版者</td><td>有则必备</td><td class="mono">7.5.3</td></tr>
+          <tr><td>出版年</td><td>有则必备</td><td class="mono">7.5.4</td></tr>
+          <tr><td>尺寸</td><td>纸质单幅地图必备</td><td class="mono">—</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div><b>比例尺</b>与<b>尺寸</b>是地图特有的两项，相关章条号都是"—"（由本条自定）。</div>
+      <div>必备性有两处特别：<b>比例尺</b>为"有则必备"；<b>尺寸</b>为"<b>纸质单幅地图必备</b>"——即电子地图、地图册等不必著录尺寸。</div>
+    </div>
+
+    <h3>8.13.3 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息. 比例尺[文献类型标识/文献载体标识]. 版本. 出版地:出版者,出版年. 尺寸. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 胡健民. 东南极拉斯曼丘陵地区地质图. 1：25 000[CM]. 北京：科学出版社，2021. 128 cm×84 cm.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 刘祥沈. 沈阳市政区图. 1：170 000[CM]. 武汉：武汉大学出版社，2016. 138 cm×96 cm.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] 国家测绘地理信息局. 一带一路经济走廊及其途经城市分布地势图[CM/OL]. http://ydyl.china.com.cn/2016-10/27/content_39582227.htm.</span></div>
+    </div>
+    <div class="notes">
+      <div>格式串里<b>比例尺在题名之后、文献类型标识之前</b>：<span class="mono">…地质图. 1：25 000[CM].</span>；<b>尺寸在出版年之后、路径之前</b>：<span class="mono">…2021. 128 cm×84 cm.</span>。</div>
+      <div>示例 1、2 的尺寸用 <span class="mono">cm×cm</span> 表示（× 为乘号），照所给原文。</div>
+      <div>示例 3 为 [CM/OL] 电子地图：<b>省略了比例尺与尺寸</b>，只有出版者/日期与路径——与表 13 中"比例尺有则必备""尺寸仅纸质单幅地图必备"相吻合。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.13.1–8.13.3 的条款正文、表 13 与全部 7 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 8.14 数据集 ===== -->
+  <section class="panel" id="sec-8.14">
+    <h2><span class="no">8.14</span>数据集 <span class="tag">2025 版新增单列格式</span></h2>
+
+    <h3>8.14.1 通用要求</h3>
+    <p>凡以图书、图书中的析出文献、连续出版物、连续出版物中的析出文献形式出现的数据集，其著录项目与著录格式应分别按 8.2～8.5 中的有关规则处理。除此之外的数据集应按 8.14.3 著录。</p>
+    <div class="notes">
+      <div>即：数据集若以图书、析出文献、期刊等形式出现，就<b>按 8.2–8.5 的既有规则著录</b>；其余情况才用 8.14 这套单列格式。</div>
+    </div>
+
+    <h3>8.14.2 著录项目</h3>
+    <p class="lead">数据集应按表 14 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 14　数据集著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>版本</td><td>可选</td><td class="mono">7.4</td></tr>
+          <tr><td>发布平台</td><td>电子资源可选</td><td class="mono">7.5.1</td></tr>
+          <tr><td>发布或修改日期</td><td>有则必备</td><td class="mono">7.6</td></tr>
+          <tr><td>引用日期</td><td>必备</td><td class="mono">7.6</td></tr>
+          <tr><td>获取和访问路径</td><td>电子资源必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>8.14.3 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. 版本. 发布平台(发布或修改日期)[引用日期]. 获取和访问路径. 永久标识符.</span></div>
+
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 周壮, 李盛阳, 吴薇, 等. 天宫二号遥感图像自然景物分类科学数据[DS/OL]. V1.0. 国家基础学科公共科学数据中心 (2023-09-10) [2025-07-15]. https://www.nbsdc.cn/general/dataLinks/CSTR:16666.11.nbsdc.tfpbwtqf.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 黄土高原科学数据中心 (西北农林科技大学水土保持研究所). 青海省县域教育、卫生发展指标 (2001—2022 年) [DS/OL]. 国家地球系统科学数据中心-黄土高原分中心 (2024-12-25) [2025-07-10]. https://loess.geodata.cn/data/datadetails.html?dataguid=58691800703558. DOI:10.12041/geodata.58691800703558.ver1.db.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] IHME. Global burden of disease study 2019 (GBD 2019) data resources[DS/OL]. Global Health Data Exchange (2021) [2025-07-15]. https://ghdx.healthdata.org/gbd-2019.</span></div>
+    </div>
+
+    <div class="notes">
+      <div>格式串里的日期与括号对应关系：<b>发布平台后用圆括号</b>著录发布或修改日期 <span class="mono">(2023-09-10)</span>，<b>引用日期用方括号</b> <span class="mono">[2025-07-15]</span>——与 7.6 的两类日期写法一致。</div>
+      <div>标识为 <span class="mono">[DS/OL]</span>：<span class="mono">DS</span> 为数据集（2025 版新增类型），<span class="mono">OL</span> 为联机网络载体。</div>
+      <div>示例 2 为中文著录，日期用全角括号并带空格（<span class="mono">(2001—2022 年) [DS/OL]</span>）；示例 1、3 中 <span class="mono">[DS/OL]</span> 紧邻题名——原文如此，未作统一。</div>
+      <div>示例 1 以 CSTR 作永久标识符、示例 2 以 DOI 作永久标识符，均置于路径之后（对应 7.9.2）；示例 3 只有路径、未另著录标识符。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.14.1–8.14.3 的条款正文、表 14 与全部 3 个实例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+    <section class="panel" id="sec-8.15">
+    <h2><span class="no">8.15</span>预印本 <span class="tag">2025 版全新类型，标识代码 PP</span></h2>
+
+    <h3>8.15.1 著录项目</h3>
+    <p class="lead">预印本应按表 15 的著录项目著录。</p>
+    <div class="scroll-x">
+      <table>
+        <caption class="who" style="text-align:left;padding:4px 0">表 15　预印本著录项目</caption>
+        <thead><tr><th>元素</th><th style="width:130px">必备性</th><th style="width:130px">相关章条号</th></tr></thead>
+        <tbody>
+          <tr><td>主要责任者</td><td>有则必备</td><td class="mono">7.1</td></tr>
+          <tr><td>题名</td><td>必备</td><td class="mono">7.2</td></tr>
+          <tr><td>其他题名信息</td><td>有则必备</td><td class="mono">7.2.3</td></tr>
+          <tr><td>文献类型标识</td><td>必备</td><td class="mono">7.3、A.1</td></tr>
+          <tr><td>文献载体标识</td><td>电子资源必备</td><td class="mono">7.3、A.2</td></tr>
+          <tr><td>版本</td><td>有则必备</td><td class="mono">7.4</td></tr>
+          <tr><td>出版平台</td><td>电子资源可选</td><td class="mono">7.5.1</td></tr>
+          <tr><td>创建或修改日期</td><td>有则必备</td><td class="mono">7.6</td></tr>
+          <tr><td>引用日期</td><td>必备</td><td class="mono">7.6</td></tr>
+          <tr><td>获取和访问路径</td><td>必备</td><td class="mono">7.8</td></tr>
+          <tr><td>永久标识符</td><td>电子资源可选</td><td class="mono">7.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="notes">
+      <div>预印本是 <b>2025 版全新增加的文献类型</b>，标识代码 <span class="mono">PP</span>（2015 版没有该类型）。</div>
+      <div><b>版本</b>为"有则必备"（示例 3 作 <span class="mono">V2</span>）；<b>出版平台</b>为"电子资源可选"、引 7.5.1（与数据集的"发布平台"同类）；<b>创建或修改日期</b>有则必备、<b>引用日期</b>与<b>获取和访问路径</b>均为"必备"。</div>
+    </div>
+
+    <h3>8.15.2 著录格式</h3>
+    <div class="fmt"><span class="k">著录格式</span><span class="v" style="flex:1">主要责任者. 题名:其他题名信息[文献类型标识/文献载体标识]. 版本. 出版平台(创建或修改日期)[引用日期]. 获取和访问路径. 永久标识符.</span></div>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="lb">示例 1</span><span class="tx">[1] 肖玲，张雪，王永. 数据要素的统计测算方法探究[PP/OL]. PSSXiv (2024-07-02) [2024-09-30]. https://zsyyb.cn/abs/202408.01096. CSTR:32012.36.PSSXiv.202408.01096.</span></div>
+      <div class="eg"><span class="lb">示例 2</span><span class="tx">[2] 方向明，曹迎杰. 元宇宙在图书馆的应用：理论研究与实践进展[PP/OL]. ChinaXiv (2023-03-03) [2024-09-30]. http://www.chinaxiv.org/abs/202303.00020. CSTR:32003.36.ChinaXiv.202303.00020.V1.</span></div>
+      <div class="eg"><span class="lb">示例 3</span><span class="tx">[3] Jenkins S D, Ruostekoski J. Controlled manipulation of light by cooperative response of atoms in an optical lattice[PP/OL]. V2. (2012-03-18) [2020-06-24]. https://doi.org/10.48550/arXiv.1112.6136.</span></div>
+    </div>
+    <div class="notes">
+      <div>格式串的日期与括号分工：<b>出版平台后用圆括号</b>著录创建或修改日期 <span class="mono">(2024-07-02)</span>，<b>引用日期用方括号</b> <span class="mono">[2024-09-30]</span>——与 7.6 一致。</div>
+      <div>示例 1、2 的出版平台分别为 <span class="mono">PSSXiv</span>、<span class="mono">ChinaXiv</span>（预印本平台），并都以 <b>CSTR</b> 作永久标识符置于路径之后（对应 7.9.2）。</div>
+      <div>示例 3 有 <b>版本 <span class="mono">V2</span></b>，且<b>未著录出版平台</b>（平台为"电子资源可选"），日期与路径直接接在版本之后；其永久标识符为 DOI（arXiv 的 DOI）。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>8.15.1 表 15、8.15.2 著录格式与全部 3 个示例，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+  </section>
+
+  <!-- ===== 9 参考文献标引体系 ===== -->
+  <section class="panel" id="sec-9">
+    <h2><span class="no">9</span>参考文献标引体系编制法 <span class="tag">2015 版为第 9、10 两章</span></h2>
+    <h3>9.1 通用要求</h3>
+    <div class="clause">
+      <div class="t">引用体系的组织与参考文献的著录位置</div>
+      <p>参考文献的引用体系可按顺序编码制组织，也可按著者-出版年制组织。引文参考文献既可集中著录在文后或书末，也可分散著录在页下端。阅读型参考文献应著录在文后、书的各章节后或书末。</p>
+      <div class="notes">
+        <div>本条是第 9 章的总前提，把后续两节的关系讲清了：<b>顺序编码制（9.2）与著者-出版年制（9.3）是两种可选的"引用体系"</b>，各自规定标注与编排方式。</div>
+        <div><b>引文参考文献</b>（引用具体信息、需对应到被引处）位置较灵活——可集中在文后/书末，也可<b>分散著录在页下端</b>（即脚注式，正是 9.2.1.1 示例 2、9.2.1.3 示例 2 所示的圈码脚注形式）。</div>
+        <div><b>阅读型参考文献</b>（供读者延伸阅读、无对应被引处）只能集中著录：文后、书的各章节后或书末。</div>
+        <div>两类文献的区分是理解"为什么引文可用脚注、阅读型不行"的关键。</div>
+      </div>
+    </div>
+
+    <h3>9.2 顺序编码制</h3>
+
+    <h4 class="sub-h">9.2.1 正文中的引用</h4>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.2.1.1</span>连续编码与脚注圈码</div>
+      <p>顺序编码制应按正文中引用的文献出现的先后顺序连续编码，并将序号置于"[]"中，见示例 1。如果顺序编码制用脚注方式时，序号可由计算机自动生成圈码，见示例 2。</p>
+      <div class="notes"><div>示例 1（序号置于方括号内）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">……德国学者 N. 克罗斯研究了瑞士巴塞尔市附近侏罗山中老第三纪断裂对第三系褶皱的控制[235]；之后，他又描述了西里西亚第3条大型的近南北向构造带，并提出地槽是在不均一的块体的基底上发展的思想[236]。</span></div>
+        <div class="eg"><span class="tx">…………</span></div>
+      </div>
+      <div class="notes"><div>示例 2（脚注方式，序号由计算机自动生成圈码）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">……所谓"移情"，就是"说话人将自己认同于……他用句子所描写的事件或状态中的一个参与者"<sup class="fn">①</sup>。《汉语大词典》和张相<sup class="fn">②</sup>都认为"可"是"痊愈"，侯精一认为是"减轻"<sup class="fn">③</sup>。……另外，根据侯精一，表示病痛程度减轻的形容词"可"和表示逆转否定的副词"可"是兼类词<sup class="fn">④</sup>，这也说明二者应该存在着源流关系。</span></div>
+        <div class="eg"><span class="tx">…………</span></div>
+      </div>
+      <div class="notes">
+        <div>两种写法对照：一般情况用<b>方括号序号</b>（<span class="mono">[235]</span>、<span class="mono">[236]</span>）；改用脚注方式时，序号可由计算机自动生成<b>圈码</b>（<span class="mono">①②③④</span>，本页示例中已按下标位置作上标显示）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.2.1.2</span>同一处引用多篇文献</div>
+      <p>同一处引用多篇文献时，应将各篇文献的序号在"[]"内全部列出，各序号间用"，"。如遇连续序号，起讫序号间用短横线连接。此规则不适用于用计算机自动编码的序号。</p>
+      <div class="egs">
+        <div class="eg"><span class="tx">裴伟[570,83]提出……</span></div>
+        <div class="eg"><span class="tx">莫拉德对稳定区的节理格式的研究[255-256]……</span></div>
+      </div>
+      <div class="notes">
+        <div>两种情形：<b>不连续</b>序号间用逗号（<span class="mono">[570,83]</span>）；<b>连续</b>序号用短横线连接起讫（<span class="mono">[255-256]</span>）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.2.1.3</span>多次引用同一文献</div>
+      <p>多次引用同一责任者的同一文献时，在正文中标注首次引用的文献序号，并在序号的"[]"外著录引文页码，见示例 1。如果用计算机自动编序号时，应重复著录参考文献，但参考文献表中的著录项目可简化为文献序号及引文页码，见示例 2。</p>
+
+      <div class="notes"><div>示例 1（方括号序号方式）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">……改变社会规范也可能存在类似的"二阶囚徒困境"问题：尽管改变旧的规范对所有人都好，但个人理性选择使得没有人愿意率先违反旧的规范[1]。……事实上，古希腊对轴心时代思想真正的贡献不是来自对民主的赞扬，而是来自对民主制度的批评，苏格拉底、柏拉图和亚里士多德3位贤圣都是民主制度的坚决反对者[2]260。……柏拉图在西方世界的影力是如此之大以至于有学者评论说，一切后世的思想都是一系列为柏拉图思想所作的脚注[3]。……据《唐会要》记载，当时拆毁的寺院有4 600余所，招提、兰若等佛教建筑4万余所，没收寺产，并强迫僧尼还俗达260 500人。佛教受到极大的打击[2]326-329。……陈登原先生的考证是非常精确的，他印证了《春秋说题辞》"黍者绪也，故其立字，禾入米为黍，为酒以扶老，为酒以序尊卑，禾为柔物，亦宜养老"，指出："以上谓等威之辨，尊卑之序，由于饮食荣辱。"[4]</span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">[1] Sunstein C R. Social norms and social roles[J/OL]. Columbia Law Review, 1996, 96: 903. http://www.heinonline.org/HOL/Page?handle=hein.journals/clr96&amp;id=913&amp;collection=journals&amp;index=journals/clr.</span></div>
+        <div class="eg"><span class="tx">[2] Morris I. Why the West rules—for now: the patterns of history, and what they reveal about the future[M]. New York: Farrar, Straus and Giroux, 2010.</span></div>
+        <div class="eg"><span class="tx">[3] 罗杰斯. 西方文明史：问题与源头[M]. 潘惠霞, 魏婧, 杨艳, 等, 译. 大连: 东北财经大学出版社, 2011: 15-16.</span></div>
+        <div class="eg"><span class="tx">[4] 陈登原. 国史旧闻：第1卷[M]. 北京: 中华书局, 2000: 29.</span></div>
+      </div>
+
+      <div class="notes"><div>示例 2（脚注圈码方式，参考文献表可简化）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">……改变社会规范也可能存在类似的"二阶囚徒困境"问题：尽管改变旧的规范对所有人都好，但个人理性选择使得没有人愿意率先违反旧的规范<sup class="fn">①</sup>。……事实上，古希腊对轴心时代思想真正的贡献不是来自对民主的赞扬，而是来自对民主制度的批评，苏格拉底、柏拉图和亚里士多德3位贤圣都是民主制度的坚决反对者<sup class="fn">②</sup>。……柏拉图在西方世界的影力是如此之大以至于有学者评论说，一切后世的思想都是一系列为柏拉图思想所作的脚注<sup class="fn">③</sup>。……据《唐会要》记载，当时拆毁的寺院有4 600余所，招提、兰若等佛教建筑4万余所，没收寺产，并强迫僧尼还俗达260 500人。佛教受到极大的打击<sup class="fn">④</sup>。……陈登原先生的考证是非常精确的，他印证了《春秋说题辞》"黍者绪也，故其立字，禾入米为黍，为酒以扶老，为酒以序尊卑，禾为柔物，亦宜养老"，指出："以上谓等威之辨，尊卑之序，由于饮食荣辱。"<sup class="fn">⑤</sup></span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">① Sunstein C R. Social norms and social roles[J/OL]. Columbia Law Review, 1996, 96: 903. http://www.heinonline.org/HOL/Page?handle=hein.journals/clr96&amp;id=913&amp;collection=journals&amp;index=journals/clr.</span></div>
+        <div class="eg"><span class="tx">② Morris I. Why the West rules—for now:the patterns of history,and what they reveal about the future[M]. New York : Farrar, Straus and Giroux, 2010: 260.</span></div>
+        <div class="eg"><span class="tx">③ 罗杰斯. 西方文明史：问题与源头[M]. 潘惠霞, 魏婧, 杨艳, 等, 译. 大连: 东北财经大学出版社, 2011: 15-16.</span></div>
+        <div class="eg"><span class="tx">④ 同②326-329.</span></div>
+        <div class="eg"><span class="tx">⑤ 陈登原. 国史旧闻：第1卷[M]. 北京: 中华书局, 2000: 29.</span></div>
+      </div>
+
+      <div class="notes">
+        <div>关键在于<b>页码著录在序号之外</b>：示例 1 作 <span class="mono">[2]260</span>、<span class="mono">[2]326-329</span>——正文中首次引用的序号仍是 <span class="mono">[2]</span>，页码跟在方括号<b>外</b>。</div>
+        <div>示例 2 演示计算机自动编码时的简化：同一文献重复引用可写 <b>"同②326-329."</b>——用"同"加序号代替重复著录全部项目，只补页码。</div>
+      </div>
+    </div>
+
+    <h4 class="sub-h">9.2.2 参考文献表编制要求</h4>
+    <p>参考文献表采用顺序编码制组织时，各篇文献应按正文部分标注的序号依次列出（见 9.2.1）。</p>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="tx">[1] Baker S K, Jackson M E. The future of resource sharing[M]. New York: The Haworth Press, 1995.</span></div>
+      <div class="eg"><span class="tx">[2] Chernik B E. Introduction to library services for library technicians [M]. Littleton, Colo.: Libraries Unlimited, Inc., 1982.</span></div>
+      <div class="eg"><span class="tx">[3] 尼葛洛庞帝. 数字化生存[M]. 胡泳, 范海燕, 译. 海口: 海南出版社, 1996.</span></div>
+      <div class="eg"><span class="tx">[4] 汪冰. 电子图书馆理论与实践研究[M]. 北京: 北京图书馆出版社, 1997: 16.</span></div>
+      <div class="eg"><span class="tx">[5] 杨宗英. 电子图书馆的现实模型[J]. 中国图书馆学报, 1996 (2): 24-29.</span></div>
+      <div class="eg"><span class="tx">[6] Dowler L. The research university’ s dilemma: resource sharing and research in a transinstitutional environment[J]. Journal of Library Administration, 1995, 21 (1/2): 5-26.</span></div>
+    </div>
+    <div class="notes">
+      <div>与本页 9.3.2 的著者-出版年制对照：顺序编码制<b>按正文标注的序号依次列出</b>（序号即排序依据，不按文种或字顺分组）；著者-出版年制则先分文种、再按责任者字顺与出版年排列。</div>
+      <div>同一批文献在两制下的写法差别就在出版年位置：顺序编码制作 <span class="mono">尼葛洛庞帝. 数字化生存[M]. … 1996.</span>，著者-出版年制作 <span class="mono">尼葛洛庞帝，1996. 数字化生存[M]. …</span>（见 9.3.2 示例）。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>9.2.1（9.2.1.1–9.2.1.3）与 9.2.2 的条款正文、全部示例与参考文献，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。标准 9.1（通用要求）的原文尚未提供，本页暂缺。</p>
+
+    <h3>9.3 著者-出版年制</h3>
+
+    <h4 class="sub-h">9.3.1 正文中的引用</h4>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.3.1.1</span>标注内容</div>
+      <p>正文引用的文献采用著者-出版年制时，各篇文献的标注内容应由责任者姓氏与出版年（见 7.5.1、7.5.4.1）构成，并置于"()"内。倘若只标注责任者姓氏无法识别该人名时，可标注责任者姓名（见 7.1.1）。集体责任者著述的文献可标注机关团体名称。倘若正文中已提及责任者姓名，则在其后的"()"内只著录出版年。</p>
+      <div class="notes"><div>示例（正文引用）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">The notion of an invisible college has been explored in the sciences (Crane, 1972). Its absence among historians was noted by Stieg(1981) ...</span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">Crane D, 1972. Invisible college[M]. Chicago: Univ. of Chicago Press.</span></div>
+        <div class="eg"><span class="tx">Stieg M F, 1981. The information needs of historians[J]. College and Research Libraries, 42 (6): 549-560.</span></div>
+      </div>
+      <div class="notes">
+        <div>示例里两种情形都出现了：<span class="mono">(Crane, 1972)</span> 是"责任者 + 逗号 + 出版年"；<span class="mono">Stieg(1981)</span> 是正文已提及责任者姓名，括号内<b>只写出版年</b>。</div>
+        <div>参考文献表中，著者-出版年制的出版年<b>紧随责任者之后、用逗号分隔</b>：<span class="mono">Crane D, 1972.</span>（对应 8.1）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.3.1.2</span>多责任者的标注</div>
+      <p>正文中引用多责任者文献时，对欧美责任者只需标注第一个责任者的姓，其后附"et al."；对于中国责任者应标注第一责任者的姓名，其后附"等"字。姓氏与"et al.""等"之间留适当空隙。</p>
+      <div class="notes"><div>示例（正文引用）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">Poor teacher behaviors are not a substantial problem for EFL (English as a Foreign Language) Japanese learners, but the converse, that teacher seem quite inspiring (Falout et al., 2009) ...</span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">Falout J, Elwood J, Hood M, 2009. Demotivation: affective states and learning outcomes[J]. System, 37 (3): 403-417.</span></div>
+      </div>
+      <div class="notes">
+        <div>对照规则：欧美责任者作 <span class="mono">(Falout et al., 2009)</span>——只标第一个责任者的姓 + "et al."；<b>中国责任者则作"第一责任者姓名 + 等"</b>。</div>
+        <div>注：示例原文中 <span class="mono">that teacher seem</span> 缺第三人称单数（正常应为 seems），系原文如此，未作改动。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.3.1.3</span>同一责任者同年多篇文献</div>
+      <p>著录同一责任者在同一年出版的多篇文献时，在正文中标注责任者与出版年，出版年后应用小写字母 a,b,c……区别，并置于"()"内。</p>
+      <div class="notes"><div>示例（正文引用）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">文献增长规律能在一定程度上反映出某个研究领域的发展状况。文献逻辑增长模型提出文献增长包括三个阶段：早期阶段呈指数增长；中期阶段增长率开始变小，出现转折点；后期文献累积量增加缓慢并且趋于一个极限值（邱均平，2000a）。……文献计量学中的布拉德福分散定律描述了科技论文在期刊中的分布规律，运用此定律，结合本研究的样本数量，将来源期刊按照其刊载的文献数量进行降序排列，并且划分出4个区域（核心区、相关区、弱相关区、非相关区），使每个区内期刊载文量约为全部期刊载文量的1/4，并且尽量使核心区、相关区、弱相关区、非相关区含有的期刊数量满足 1 : n : n² : n³ 的比例关系（邱均平，2000b）。……洛特卡定律描述了科学工作者和科学论文产出量之间的数学规律，核心思想可表述为：发表 x 篇文章的作者数量是发表 1 篇文章作者数量的 1/x²，且发表 1 篇文章的作者数是全体作者的 60% 左右（邱均平，2000c）。利用此规律可以对某领域的作者发文情况进行分析。</span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">邱均平，2000a. 信息计量学（二）：第二讲文献信息增长规律与应用[J/OL]. 情报理论与实践，23（2）：153-157. DOI: 10.16353/j.cnki.1000-7490.2000.02.025.</span></div>
+        <div class="eg"><span class="tx">邱均平，2000b. 信息计量学（四）：第四讲文献信息离散分布规律——布拉德福定律[J/OL]. 情报理论与实践，23（4）：315-320. DOI: 10.16353/j.cnki.1000-7490.2000.04.028.</span></div>
+        <div class="eg"><span class="tx">邱均平，2000c. 信息计量学（六）：第六讲文献信息作者分布规律——洛特卡定律[J/OL]. 情报理论与实践，23（6）：475-478. DOI: 10.16353/j.cnki.1000-7490.2000.06.026.</span></div>
+      </div>
+      <div class="notes">
+        <div>正文标注用 <span class="mono">（邱均平，2000a）</span>、<span class="mono">（邱均平，2000b）</span>、<span class="mono">（邱均平，2000c）</span> 区分同一年三篇；<b>参考文献表里的年份也带同样的字母</b>（<span class="mono">邱均平，2000a.</span>）。</div>
+      </div>
+    </div>
+
+    <div class="clause">
+      <div class="t"><span class="no">9.3.1.4</span>多次引用同一文献：括号外著录页码</div>
+      <p>多次引用同一责任者的同一文献，在正文中标注责任者与出版年，并在"()"外以角标的形式著录引文页码。</p>
+      <div class="notes"><div>示例（正文引用）：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">主编靠编辑思想指挥全局已是编辑界的共识（张忠智，1997），然而对编辑思想至今没有一个明确的界定，故不妨提出一个构架……参与讨论。由于"思想"的内涵是"客观存在反映在人的意识中经过思维活动而产生的结果"（中国社会科学院语言研究所词典编辑室，1996）1194，所以"编辑思想"的内涵就是编辑实践反映在编辑工作者的意识中，"经过思维活动而产生的结果"。……《中国青年》杂志创刊人追求的高格调——理性的成熟与热点的凝聚（刘彻东，1998），表明其读者群的文化的品位的高层次……"方针"指"引导事业前进的方向和目标"（中国社会科学院语言研究所词典编辑室，1996）354。……对编辑方针，1981年中国科协副主席裴丽生曾有过科学的论断："自然科学学术期刊应坚持以马列主义、毛泽东思想为指导，贯彻为国民经济发展服务、理论与实践相结合、普及与提高相结合、'百花齐放，百家争鸣'的方针。"（裴丽生，1981）它完整地回答了为谁服务，怎样服务，如何服务得更好的问题。</span></div>
+        <div class="eg"><span class="tx">…………</span></div>
+      </div>
+      <div class="notes"><div>参考文献：</div></div>
+      <div class="egs">
+        <div class="eg"><span class="tx">裴丽生，1981. 在中国科协学术期刊编辑工作经验交流会上的讲话[C]//中国科学技术协会. 中国科协学术期刊编辑工作经验交流会资料选. 北京：中国科学技术协会学会工作部：2-10.</span></div>
+        <div class="eg"><span class="tx">刘彻东，1998. 中国的青年刊物：个性特色为本[J]. 中国出版（5）：38-39.</span></div>
+        <div class="eg"><span class="tx">张忠智，1997. 科技书刊的总编（主编）的角色要求[C]//中国科学技术期刊编辑学会. 中国科学技术期刊编辑学会建会十周年学术研讨会论文汇编. 北京：中国科学技术期刊编辑学会学术委员会：33-34.</span></div>
+        <div class="eg"><span class="tx">中国社会科学院语言研究所词典编辑室，1996. 现代汉语词典[M]. 修订本. 北京：商务印书馆.</span></div>
+      </div>
+      <div class="notes">
+        <div>关键写法：页码放在括号<b>外面</b>，作角标——如 <span class="mono">（中国社会科学院语言研究所词典编辑室，1996）¹¹⁹⁴</span>、<span class="mono">（中国社会科学院语言研究所词典编辑室，1996）³⁵⁴</span>，分别对应同一文献的两个不同引文页码。</div>
+        <div>本条与 9.2 顺序编码制的对应规则一致（顺序编码制下页码也著录在方括号外，见 7.7 相关的 9.2.1.3）。</div>
+        <div>示例含 <b>[C]// 会议录析出文献</b>（裴丽生、张忠智两条）、<span class="mono">[J]</span> 期刊（刘彻东）、<span class="mono">[M]</span> 图书（现代汉语词典）三类，可对照 8.2–8.6。</div>
+      </div>
+    </div>
+
+    <h4 class="sub-h">9.3.2 参考文献表编制要求</h4>
+    <p>参考文献表采用著者-出版年制组织时，各篇文献应首先按文种集中，可分为中文、日文、西文、俄文、其他文种 5 部分；然后按责任者字顺和出版年排列。中文文献可按责任者汉语拼音字顺排列（见 9.3.1），也可按责任者的笔画顺排列。</p>
+    <div class="notes"><div>示例：</div></div>
+    <div class="egs">
+      <div class="eg"><span class="tx">尼葛洛庞帝，1996. 数字化生存[M]. 胡泳，范海燕，译. 海口：海南出版社.</span></div>
+      <div class="eg"><span class="tx">汪冰，1997. 电子图书馆理论与实践研究[M]. 北京：北京图书馆出版社：16.</span></div>
+      <div class="eg"><span class="tx">杨宗英，1996. 电子图书馆的现实模型[J]. 中国图书馆学报（2）：24-29.</span></div>
+      <div class="eg"><span class="tx">Baker S K, Jackson M E, 1995. The future of resource sharing[M]. New York: The Haworth Press.</span></div>
+      <div class="eg"><span class="tx">Chernik B E, 1982. Introduction to library services for library technicians [M]. Littleton, Colo.: Libraries Unlimited, Inc.</span></div>
+      <div class="eg"><span class="tx">Dowler L, 1995. The research university’ s dilemma: resource sharing and research in a transinstitutional environment[J]. Journal of Library Administration, 21 (1/2): 5-26.</span></div>
+    </div>
+    <div class="notes">
+      <div>示例的排列顺序体现了规则：<b>先分文种</b>（中文 3 条在前，西文 3 条在后），<b>再按责任者字顺</b>（尼葛洛庞帝、汪冰、杨宗英；Baker、Chernik、Dowler）。</div>
+      <div>中文文献可按<b>汉语拼音字顺</b>（尼葛洛庞帝 ni、汪冰 wang、杨宗英 yang——正合拼音顺序），也可按<b>笔画顺</b>。</div>
+      <div>示例中 <span class="mono">Dowler L, 1995</span> 的题名作 <span class="mono">The research university’ s dilemma</span>（撇号后有空格）、<span class="mono">technicians [M]</span>（方括号前有空格），均与所给原文一致，未作改动。</div>
+    </div>
+
+    <p class="src"><b>来源：</b>9.3.1（9.3.1.1–9.3.1.4）与 9.3.2 的条款正文、全部示例与参考文献，由本页使用者提供的标准原文录入（未作改写）；各条后的"notes"为本页为便于使用而加的说明，非标准原文。</p>
+
+    <div class="notes" style="margin-top:14px">
+      <div>说明：<b>顺序编码制的参考文献表编排要求，见 9.2；著者-出版年制的见上方 9.3.2</b>。本页未另设"参考文献表编排"独立条目，以免与 9.3.2 重复。</div>
+    </div>
+  </section>
+
+  <!-- ===== 与 2015 版的主要差异（已核实，来源：标准前言） ===== -->
+  <section class="panel" id="sec-diff">
+    <h2><span class="no">对照</span>与 GB/T 7714—2015 的主要技术变化 <span class="tag">来源：标准"前言"</span></h2>
+    <p class="lead">以下 15 项为标准前言逐条列出的主要技术变化，可直接用于旧稿件自查。</p>
+    <ol class="chg">
+      <li><span class="no">a)</span>更改了"范围"的表述形式（见第 1 章）。</li>
+      <li><span class="no">b)</span>删除了术语"主要责任者""专著""数字对象唯一标识符"；增加了术语"会议录""数据集""永久标识符""预印本""责任者"及其定义；更改了"连续出版物""顺序编码制""析出文献""著者-出版年制"的英文对应词，以及"参考文献""电子资源""连续出版物""析出文献""引文参考文献""阅读型参考文献"的定义（见第 3 章）。</li>
+      <li><span class="no">c)</span>更改了"著录信息源"的表述形式（见第 4 章）。</li>
+      <li><span class="no">d)</span>更改了著录用文字、汉语拼音人名著录规定（见 5.1、5.3）。</li>
+      <li><span class="no">e)</span>更改了"著录用符号"的表述形式（见第 6 章）。</li>
+      <li><span class="no">f)</span>将"著录细则"更改为"著录通则"（见第 7 章）。</li>
+      <li><span class="no">g)</span>将"公告日期、更新日期、引用日期"更改为"创建/发布或修改日期、引用日期"（见 7.6）。</li>
+      <li><span class="no">h)</span>将"数字对象唯一标识符"更改为"永久标识符"（见 7.9）。</li>
+      <li><span class="no">i)</span>将"专著""专著中的析出文献"分别更改为"图书""图书中的析出文献"（见 8.2、8.3）。</li>
+      <li><span class="no">j)</span>增加了"会议录""学位论文""报告""标准""网站、网页""档案""地图""数据集""预印本"的著录项目和著录格式（见 8.6–8.9、8.11–8.15）。</li>
+      <li><span class="no">k)</span>更改了"析出文献"的表述形式，将相关内容拆分纳入"各文献类型著录项目与著录格式"（见 8.3、8.5）。</li>
+      <li><span class="no">l)</span>更改了"著录项目"的元素，增加了著录项目的必备性和相关章条号（见第 8 章）。</li>
+      <li><span class="no">m)</span>更改了"电子资源"表述形式，将相应内容拆分到各相关文献类型。</li>
+      <li><span class="no">n)</span>将"参考文献表""参考文献标注法"合并为第 9 章"参考文献标引体系编制法"。</li>
+      <li><span class="no">o)</span>文献类型"普通图书""舆图"分别更改为"图书""地图"；增加文献类型"预印本"及标识代码 PP；增加电子资源载体"缩微资料"及标识代码 MM；将 EB 代表的文献类型更改为"网站、网页"（见附录 A）。</li>
+    </ol>
+
+    <h3>常见差异点（速查）</h3>
+    <div class="scroll-x">
+      <table>
+        <thead><tr><th style="width:132px">项目</th><th>GB/T 7714—2015</th><th>GB/T 7714—2025</th></tr></thead>
+        <tbody>
+          <tr><td>西文作者姓氏</td><td>姓氏全部大写，如 <span class="mono">EINSTEIN A</span></td><td>仅首字母大写，如 <span class="mono">Einstein A</span></td></tr>
+          <tr><td>汉语拼音人名</td><td>姓全大写，<b>其名可缩写</b>，取每个汉字拼音的首字母（GB/T 7714—2015 第 6.3）</td><td>2025 版 5.3 改为"宜使用 GB/T 28039 给出的规则拼写"，对应 7.1.1"用汉语拼音著录个人责任者……<b>名宜用全称</b>"——即由"可缩写"转为"宜全称"，如 <span class="mono">Li Jiangning → LI J N</span> 与 <span class="mono">Li Jiangning</span> 之分</td></tr>
+          <tr><td>文献类型标识</td><td>普通图书 [M]、舆图 [CM]、电子公告 [EB]，无预印本</td><td>图书 [M]、地图 [CM]、网站网页 [EB]，新增预印本 [PP]</td></tr>
+          <tr><td>载体标识</td><td>MT、DK、CD、OL</td><td>增加缩微资料 <span class="mono">MM</span></td></tr>
+          <tr><td>单列著录格式的类型</td><td>专著、析出文献、连续出版物、专利、电子资源</td><td>另为会议录、学位论文、报告、标准、网站网页、档案、地图、数据集、预印本分别给出著录项目和格式</td></tr>
+          <tr><td>标识符</td><td>数字对象唯一标识符（DOI）</td><td>永久标识符（PID，含 DOI、URN 等）</td></tr>
+          <tr><td>日期项</td><td>公告日期、更新日期、引用日期</td><td>创建/发布或修改日期、引用日期</td></tr>
+          <tr><td>章节名称</td><td>著录细则；参考文献表 + 参考文献标注法（第 9、10 章）</td><td>著录通则；参考文献标引体系编制法（第 9 章）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="src"><b>来源：</b>标准"前言"技术变化清单（a–o），经闽江学院图书馆等解读页与标准扫描件文本核对；"常见差异点"表中除标注待填的两格外，其余各项均有两处以上独立来源一致。</p>
+  </section>
+
+  <!-- ===== 旧稿自查清单 ===== -->
+  <section class="panel" id="sec-checklist">
+    <h2><span class="no">自查</span>改用 2025 版时逐条检查</h2>
+    <ul class="plain">
+      <li>西文作者姓氏是否已从全大写改为仅首字母大写？</li>
+      <li>预印本是否已用 <span class="mono">[PP]</span> 标识并按 8.15 著录？</li>
+      <li>会议录、学位论文、报告、标准、网站网页、档案、地图、数据集是否已按新单列格式改写？</li>
+      <li>标准类文献是否已改为"标准编号 标准名称[S]"起头？</li>
+      <li>DOI 是否已按"永久标识符"处理，并与获取和访问路径同时著录？</li>
+      <li>非网络类文献是否已不再著录访问日期？</li>
+      <li>学位论文是否已标注具体引用页码？</li>
+      <li>全文是否统一到同一版本（同一稿件的所有著录条目）？</li>
+    </ul>
+  </section>
+
+  <footer>
+    <div><b>标准信息：</b>GB/T 7714—2025《信息与文献 参考文献著录规则》，2025-12-02 发布，2026-07-01 实施，代替 GB/T 7714—2015。</div>
+  </footer>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- 目录：从正文标题自动生成 ----------
+  // 规则：每个 section.panel 的 h2 = 分组标题（可锚跳）；面板内 h3 / h4.sub-h = 其下级条目。
+  // 完全按文档结构生成，不住靠猜测章号，因此后续新增或调整章节会自动跟随。
+  const tocList = document.getElementById('tocList');
+  const tocFilter = document.getElementById('tocFilter');
+  const tocCount = document.getElementById('tocCount');
+  const tocToggle = document.getElementById('tocToggle');
+
+  if (!tocList) return;   // 页面若无目录容器则不做任何事
+
+  // 只取标题自身的文字，剔除「2015 版称…」「2025 版新增…」这类徽标与章条号前缀重复
+  function headingText(el) {
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('.tag, .tag-done, .no').forEach((n) => n.remove());
+    return clone.textContent.replace(/\s+/g, ' ').trim();
+  }
+
+  function buildToc() {
+    const panels = [...document.querySelectorAll('section.panel')];
+    tocList.innerHTML = '';
+    const links = [];
+    let sections = 0;
+
+    panels.forEach((panel, pi) => {
+      const h2 = panel.querySelector('h2');
+      if (!h2) return;
+      const noEl = h2.querySelector('.no');
+      const no = noEl ? noEl.textContent.trim() : '';
+      if (!panel.id) panel.id = 'panel-' + (pi + 1);
+      const title = headingText(h2) || no || ('第 ' + (pi + 1) + ' 节');
+      const label = no && !title.startsWith(no) ? no + ' ' + title : title;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'toc-wrap';
+
+      const a = document.createElement('a');
+      a.className = 'toc-link lv2';
+      a.href = '#' + panel.id;
+      a.dataset.id = panel.id;
+      a.dataset.search = label.toLowerCase();
+      a.textContent = label;
+      a.title = label;
+      wrap.appendChild(a);
+      links.push(a);
+
+      [...panel.querySelectorAll('h3, h4.sub-h')].forEach((sub, si) => {
+        const level = sub.tagName === 'H4' ? 4 : 3;
+        const txt = headingText(sub);
+        if (!txt) return;
+        if (!sub.id) sub.id = panel.id + '-' + (si + 1);
+        const s = document.createElement('a');
+        s.className = 'toc-link lv' + level;
+        s.href = '#' + sub.id;
+        s.dataset.id = sub.id;
+        s.dataset.search = txt.toLowerCase();
+        s.textContent = txt;
+        s.title = txt;
+        wrap.appendChild(s);
+        links.push(s);
+      });
+
+      tocList.appendChild(wrap);
+      sections += 1;
+    });
+
+    tocCount.textContent = sections + ' 节 / ' + links.length + ' 条';
+    return links;
+  }
+
+  const tocLinks = buildToc();
+
+  // ---------- 滚动高亮当前条目 ----------
+  const byId = new Map(tocLinks.map((a) => [a.dataset.id, a]));
+  const targets = tocLinks.map((a) => document.getElementById(a.dataset.id)).filter(Boolean);
+
+  function highlight() {
+    let best = null;
+    for (const t of targets) {
+      if (t.getBoundingClientRect().top - 120 <= 0) best = t;
+      else break;
+    }
+    const id = best ? best.id : (targets[0] && targets[0].id);
+    tocLinks.forEach((a) => a.classList.toggle('cur', a.dataset.id === id));
+    const active = byId.get(id);
+    if (active && tocList.scrollHeight > tocList.clientHeight + 4) {
+      const r = active.getBoundingClientRect();
+      const lr = tocList.getBoundingClientRect();
+      if (r.top < lr.top || r.bottom > lr.bottom) active.scrollIntoView({ block: 'nearest' });
+    }
+  }
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { highlight(); ticking = false; });
+  }, { passive: true });
+  highlight();
+
+  // ---------- 筛选 ----------
+  function filter(term) {
+    const q = term.trim().toLowerCase();
+    let shown = 0;
+    tocLinks.forEach((a) => {
+      const hit = !q || a.dataset.search.includes(q);
+      a.style.display = hit ? '' : 'none';
+      if (hit) shown += 1;
+      // 命中位置优先：去掉章号前缀后以关键词开头的排前面（用 CSS order，不动 DOM）
+      const body = a.dataset.search.replace(/^[\d.\s\u9644\u5f55]+/, '');
+      a.style.order = !q ? '0' : (body.startsWith(q) ? '0' : '1');
+    });
+    // 分组内一条都不剩就整组隐藏
+    [...tocList.querySelectorAll('.toc-wrap')].forEach((w) => {
+      const any = [...w.querySelectorAll('.toc-link')].some((a) => a.style.display !== 'none');
+      w.style.display = any ? '' : 'none';
+    });
+    tocCount.textContent = q ? '命中 ' + shown + ' 项' : '共 ' + shown + ' 条';
+    let empty = tocList.querySelector('.toc-empty');
+    if (!shown && q) {
+      if (!empty) { empty = document.createElement('div'); empty.className = 'toc-empty'; tocList.appendChild(empty); }
+      empty.textContent = '没有匹配的条目';
+      empty.style.display = '';
+    } else if (empty) {
+      empty.style.display = 'none';
+    }
+  }
+  tocFilter.addEventListener('input', () => filter(tocFilter.value));
+
+  // ---------- 窄屏：展开/收起 ----------
+  tocList.addEventListener('click', (e) => {
+    if (e.target.closest('.toc-link') && window.matchMedia('(max-width: 900px)').matches) {
+      document.body.classList.remove('toc-open');
+    }
+  });
+  tocToggle.addEventListener('click', () => document.body.classList.toggle('toc-open'));
+  if (window.matchMedia('(max-width: 900px)').matches) document.body.classList.remove('toc-open');
+})();
+</script>
+</body>
+</html>

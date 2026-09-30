@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>编校工具箱 Proofreader&#39;s Toolbox · 通用规范汉字表查询</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --ink: #1f2329;
+    --ink-2: #646a73;
+    --ink-3: #8f959e;
+    --line: #e4e6eb;
+    --l1: #3370ff;
+    --l1-bg: #eef4ff;
+    --l2: #0f9d8c;
+    --l2-bg: #e8f8f6;
+    --l3: #d97706;
+    --l3-bg: #fdf3e3;
+    --danger: #d83931;
+    --radius: 12px;
+    --shadow: 0 2px 10px rgba(31, 35, 41, .06);
+    /* 统一汉字字体：
+       整体优先用霞鹜文楷（楷体风格，实测对本表 8105 字全覆盖、零回退，含扩展 B 区
+       生僻字）。若本机未安装，则依次回退到微软雅黑、等线等同样全覆盖的字体，避免
+       出现「同一个字在不同位置或字与字之间字体不一致」。
+       注意：霞鹜文楷在 CSS 中要用英文内部名 LXGW WenKai，注册表里的中文名「霞鹜文楷」
+       浏览器并不识别。
+       【约定】全站不使用等宽字体（ui-monospace / Consolas / Menlo 等）：这类字体的
+       U+2014「—」仅约 0.5 字符宽，会让规范写法「——」只占约 1 个汉字宽、明显偏短。
+       数字对齐需求改用 font-variant-numeric: tabular-nums 解决，不要换字体。 */
+    --han: "LXGW WenKai", "LXGW WenKai Mono", "Microsoft YaHei", "微软雅黑",
+           "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Source Han Sans SC",
+           "Noto Sans CJK SC", "WenQuanYi Micro Hei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 var(--han);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 32px 20px 64px; }
+  header h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: .5px; }
+  header p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+  .site-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .site-nav { display: flex; gap: 8px; align-items: center; }
+  .site-nav a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--ink-2); text-decoration: none;
+    border: 1px solid var(--line); background: #fff;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .site-nav a:hover { border-color: var(--l1); color: var(--l1); }
+  .site-nav a[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+  /* 应用品牌区：两页共用，置于页头之上 */
+  .brand {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--line);
+  }
+  .brand .name { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .brand .cn { font-size: 19px; font-weight: 700; letter-spacing: .5px; color: var(--l1); }
+  .brand .en { font-size: 12.5px; color: var(--ink-3); letter-spacing: .3px; }
+  .brand-nav { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .brand-nav a {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 13px; color: var(--ink-2); text-decoration: none;
+    border: 1px solid var(--line); background: #fff;
+    padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+  }
+  .brand-nav a:hover { border-color: var(--l1); color: var(--l1); }
+  .brand-nav a[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-top: 20px;
+  }
+  /* 输入区 */
+  .search { display: inline-flex; gap: 14px; align-items: center; }
+  /* 输入框固定为近正方形（78×78）。不用 size 属性控制宽度：浏览器按默认字号
+     估算其内禀宽度（实测每单位仅 18px，size=1 就有 156px），会撑成扁长方形。
+     组合输入时靠缩小字号保证拼音串不溢出，另用 maxlength 限制长度。 */
+  .search .char-input {
+    flex: 0 0 auto;
+    width: 78px;
+    height: 78px;
+    min-width: 0;
+    font-size: 36px;
+    font-family: var(--han);
+    text-align: center;
+    line-height: 1;
+    padding: 0 4px;
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    background: #fafbfc;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s, background .15s;
+  }
+  .search .char-input:focus { border-color: var(--l1); background: #fff; }
+  /* 组合输入期间可能装下多个临时字符（拼音串），缩小字号以便看清，不做截断 */
+  .search .char-input.typing { font-size: 19px; letter-spacing: 0; }
+  .search .side { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+  .search .btn {
+    height: 44px;
+    min-width: 104px;
+    padding: 0 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--l1);
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter .15s;
+  }
+  .search .btn:hover { filter: brightness(1.06); }
+  .hint { color: var(--ink-3); font-size: 12.5px; }
+  .examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .examples .lbl { color: var(--ink-3); font-size: 12.5px; }
+  .chip {
+    border: 1px solid var(--line);
+    background: #fafbfc;
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 14px;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .chip:hover { border-color: var(--l1); color: var(--l1); background: var(--l1-bg); }
+  /* 结果区 */
+  #result:empty { display: none; }
+  .result-head { display: flex; align-items: center; gap: 16px; }
+  .glyph {
+    flex: 0 0 auto;
+    width: 84px; height: 84px;
+    display: grid; place-items: center;
+    font-size: 52px;
+    line-height: 1;
+    background: #fafbfc;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    font-family: var(--han);
+  }
+  .result-main { flex: 1; min-width: 0; }
+  .headline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .headline .num { font-size: 22px; font-weight: 700; letter-spacing: .5px; }
+  .headline .num em { font-style: normal; color: var(--ink-3); font-weight: 500; font-size: 13px; margin-right: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12.5px; font-weight: 600;
+    padding: 3px 10px; border-radius: 999px;
+  }
+  .badge.l1 { color: var(--l1); background: var(--l1-bg); }
+  .badge.l2 { color: var(--l2); background: var(--l2-bg); }
+  .badge.l3 { color: var(--l3); background: var(--l3-bg); }
+  .badge.matched { color: var(--ink-2); background: #f2f3f5; font-weight: 500; }
+  /* 码位等数字列需要对齐时用 tabular-nums，不换字体（全站禁用等宽字体，原因见 --han 处的说明） */
+  .meta { color: var(--ink-3); font-size: 12.5px; margin-top: 4px; font-family: var(--han); font-variant-numeric: tabular-nums; }
+  .relations { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 14px; display: grid; gap: 10px; }
+  .rel-row { display: flex; gap: 12px; align-items: baseline; font-size: 14px; }
+  .rel-row .k { flex: 0 0 68px; color: var(--ink-3); font-size: 13px; }
+  .rel-row .v { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rel-row .none { color: var(--ink-3); font-size: 13px; }
+  .rel-char {
+    display: inline-grid; place-items: center;
+    min-width: 34px; height: 34px; padding: 0 6px;
+    font-size: 19px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: #fafbfc; cursor: pointer;
+    font-family: var(--han);
+  }
+  .rel-char:hover { border-color: var(--l1); color: var(--l1); background: var(--l1-bg); }
+  .actions { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .ghost {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+    border-radius: 8px; height: 34px; padding: 0 14px; font-size: 13.5px; cursor: pointer;
+  }
+  .ghost:hover { border-color: var(--l1); color: var(--l1); }
+  .empty-state { display: flex; gap: 14px; align-items: flex-start; }
+  .empty-state .mark { font-size: 34px; line-height: 1; color: var(--danger); }
+  .empty-state h3 { margin: 2px 0 6px; font-size: 16px; }
+  .empty-state p { margin: 0; color: var(--ink-2); font-size: 13.5px; }
+  /* 级别统计 */
+  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .lvl-card {
+    border: 1px solid var(--line); border-radius: 10px; padding: 14px;
+    background: #fafbfc; cursor: pointer; text-align: left;
+    transition: border-color .15s, background .15s, transform .15s;
+    font-family: var(--han); color: inherit;
+  }
+  .lvl-card:hover { transform: translateY(-1px); }
+  .lvl-card[data-level="1"]:hover { border-color: var(--l1); background: var(--l1-bg); }
+  .lvl-card[data-level="2"]:hover { border-color: var(--l2); background: var(--l2-bg); }
+  .lvl-card[data-level="3"]:hover { border-color: var(--l3); background: var(--l3-bg); }
+  .lvl-card .t { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .lvl-card .c { font-size: 20px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .lvl-card .c span { font-size: 12px; font-weight: 400; color: var(--ink-3); margin-left: 4px; }
+  .lvl-card .d { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  /* 字表浏览 */
+  .browse-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .browse-head h2 { font-size: 15px; margin: 0; }
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    border: 1px solid var(--line); background: #fff; color: var(--ink-2);
+    border-radius: 999px; padding: 4px 13px; font-size: 13px; cursor: pointer;
+  }
+  .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .grid {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fafbfc;
+  }
+  .cell {
+    display: grid; place-items: center;
+    height: 42px; border-radius: 6px;
+    font-size: 22px; cursor: pointer;
+    font-family: var(--han);
+    background: #fff; border: 1px solid transparent;
+  }
+  .cell:hover { background: var(--l1-bg); color: var(--l1); }
+  .cell[data-in-table="true"] { border-color: var(--line); }
+  .grid-note { color: var(--ink-3); font-size: 12px; margin-top: 8px; display: flex; justify-content: space-between; }
+  .grid .grid-note { grid-column: 1 / -1; text-align: center; padding: 14px 0; }
+  .history { display: flex; flex-wrap: wrap; gap: 6px; }
+  footer { margin-top: 28px; color: var(--ink-3); font-size: 12px; line-height: 1.8; }
+  footer a { color: var(--ink-2); }
+  .toast {
+    position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%) translateY(10px);
+    background: rgba(31,35,41,.92); color: #fff; font-size: 13px;
+    padding: 8px 16px; border-radius: 8px; opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @media (max-width: 560px) {
+    .levels { grid-template-columns: 1fr; }
+    /* 窄屏：输入框与按钮上下排列，避免挤压变形 */
+    .search { flex-direction: column; align-items: flex-start; }
+    .search .char-input { height: 70px; width: 70px; font-size: 32px; }
+    .glyph { width: 68px; height: 68px; font-size: 42px; }
+  }
+</style>
+<!-- 静态部署支持：需 data/api-data.js 已加载，故置于其后。
+       该文件不存在（例如只跑 node server.js）时，此处不做任何事，页面走真实接口。 -->
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="name">
+      <span class="cn">编校工具箱</span>
+      <span class="en">Proofreader&rsquo;s Toolbox</span>
+    </div>
+    <nav class="brand-nav">
+      <a href="index.html" aria-current="page">汉字表查询</a>
+      <a href="rules.html">GB/T 7714—2025</a>
+      <a href="cyt266.html">CY/T 266—2023</a>
+      <a href="cyt121.html">CY/T 121—2015</a>
+    </nav>
+  </div>
+
+  <header class="site-head">
+    <div>
+      <h1>通用规范汉字表查询</h1>
+      <p>输入一个汉字，查出它在《通用规范汉字表》（2013）中的编号与所在级别 · 全表 8105 字</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="search">
+      <input class="char-input" id="charInput" type="text" inputmode="text" maxlength="8"
+             autocomplete="off" spellcheck="false" placeholder="字" aria-label="输入一个汉字">
+      <div class="side">
+        <button class="btn" id="queryBtn" type="button">查询</button>
+        <div class="hint">也可直接粘贴，支持繁体字 / 异体字反查</div>
+      </div>
+    </div>
+    <div class="examples" style="margin-top:12px">
+      <span class="lbl">示例：</span>
+      <button class="chip" type="button">龙</button>
+      <button class="chip" type="button">鑫</button>
+      <button class="chip" type="button">黉</button>
+      <button class="chip" type="button">齉</button>
+      <button class="chip" type="button">廠</button>
+      <button class="chip" type="button">裡</button>
+    </div>
+  </section>
+
+  <section class="panel" id="result"></section>
+
+  <section class="panel">
+    <div class="browse-head">
+      <h2>字表分级</h2>
+      <span class="hint" id="statsSummary"></span>
+    </div>
+    <div class="levels" id="levels" style="margin-top:12px"></div>
+  </section>
+
+  <section class="panel">
+    <div class="browse-head">
+      <h2>浏览字表</h2>
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="grid-note">
+      <span id="gridNote"></span>
+      <span>点击任意字即可查询</span>
+    </div>
+  </section>
+
+  <section class="panel" id="historyPanel" hidden>
+    <div class="browse-head"><h2>最近查询</h2>
+      <button class="ghost" id="clearHistory" type="button">清空</button>
+    </div>
+    <div class="history" id="history" style="margin-top:12px"></div>
+  </section>
+
+  <footer>
+    <div>数据来源：教育部、国家语言文字工作委员会《通用规范汉字表》（2013 年 6 月公布，国发〔2013〕23 号），共收字 8105 个。</div>
+    <div>编号为全表连续序号：一级 1–3500，二级 3501–6500，三级 6501–8105。繁体字、异体字对照依据官方附表一整理。</div>
+    <div>本页数据内置于本地服务，可离线使用。</div>
+  </footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 数据与界面逻辑：全部在浏览器内运行，无任何服务端接口 -->
+<script src="data/api-data.js"></script>
+<script>
+// 纯静态版页面逻辑：直接读 window.__HANZI_DATA__，无任何服务端接口
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    input: $('charInput'),
+    queryBtn: $('queryBtn'),
+    result: $('result'),
+    levels: $('levels'),
+    tabs: $('tabs'),
+    grid: $('grid'),
+    gridNote: $('gridNote'),
+    statsSummary: $('statsSummary'),
+    history: $('history'),
+    historyPanel: $('historyPanel'),
+    clearHistory: $('clearHistory'),
+    toast: $('toast'),
+  };
+
+  const HISTORY_KEY = 'gsch-history';
+  const LEVEL_TEXT = { 1: '一级字表', 2: '二级字表', 3: '三级字表' };
+  let currentLevel = 1;
+
+  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // ---------- 数据装载：全部在前端完成 ----------
+  const DATA = (typeof window.__HANZI_DATA__ === 'object' && window.__HANZI_DATA__) || null;
+  if (!DATA) {
+    const tip = '<div class="empty-state"><div class="mark">!</div><div><h3>数据未载入</h3>' +
+      '<p>未找到 <code>data/api-data.js</code>。请先运行 <code>node scripts/build-static.js</code> 生成数据文件。</p></div></div>';
+    if (el.result) el.result.innerHTML = tip;
+    return;
+  }
+
+  const META = DATA.meta || {};
+  const LEVELS = META.levels || {};
+  const byChar = new Map();      // 规范字 -> entry
+  const byIndex = new Map();     // 编号 -> entry
+  const revTrad = new Map();     // 繁体字 -> [规范字]
+  const revVar = new Map();      // 异体字 -> [规范字]
+  const byLevelList = { 1: [], 2: [], 3: [] };
+
+  for (const row of DATA.entries) {
+    const [index, char, level, codePoint, trad, vari] = row;
+    const entry = { index, char, level, codePoint, trad: trad || [], vari: vari || [] };
+    byChar.set(char, entry);
+    byIndex.set(index, entry);
+    byLevelList[level].push(entry);
+    for (const c of entry.trad) {
+      if (c === char) continue;
+      if (!revTrad.has(c)) revTrad.set(c, []);
+      if (!revTrad.get(c).includes(char)) revTrad.get(c).push(char);
+    }
+    for (const c of entry.vari) {
+      if (c === char) continue;
+      if (!revVar.has(c)) revVar.set(c, []);
+      if (!revVar.get(c).includes(char)) revVar.get(c).push(char);
+    }
+  }
+
+  const codePointOf = (ch) => Array.from(ch)
+    .map((c) => 'U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')).join(' ');
+
+  const present = (e, matchedAs) => ({
+    char: e.char,
+    index: e.index,
+    level: e.level,
+    levelName: (LEVELS[String(e.level)] || {}).name || (e.level + ' 级字表'),
+    codePoint: e.codePoint,
+    traditional: e.trad,
+    variant: e.vari,
+    matchedAs,
+  });
+
+  /** 查询一个字符（含繁体、异体反查） */
+  function queryChar(raw) {
+    const text = String(raw == null ? '' : raw).trim();
+    if (!text) return { ok: false, error: '请输入一个汉字' };
+    const chars = Array.from(text);
+    if (chars.length > 1) {
+      return { ok: false, error: '一次只能查询一个字，当前输入了 ' + chars.length + ' 个字符' };
+    }
+    const char = chars[0];
+    const results = [];
+    const direct = byChar.get(char);
+    if (direct) results.push(present(direct, '规范字'));
+    for (const c of (revTrad.get(char) || [])) results.push(present(byChar.get(c), '繁体字'));
+    for (const c of (revVar.get(char) || [])) results.push(present(byChar.get(c), '异体字'));
+    if (!results.length) {
+      return {
+        ok: false,
+        error: '「' + char + '」不在《通用规范汉字表》8105 字之内',
+        query: char,
+        queryCodePoint: codePointOf(char),
+      };
+    }
+    return { ok: true, query: char, queryCodePoint: codePointOf(char), results };
+  }
+
+  /** 全表统计 */
+  function statsOf() {
+    let withTraditional = 0;
+    let withVariant = 0;
+    for (const e of DATA.entries) {
+      if (e[4]) withTraditional += 1;
+      if (e[5]) withVariant += 1;
+    }
+    return {
+      title: META.title,
+      published: META.published,
+      issuer: META.issuer,
+      total: DATA.entries.length,
+      levels: [1, 2, 3].map((n) => ({
+        ...(LEVELS[String(n)] || {}), level: n, actualCount: byLevelList[n].length,
+      })),
+      withTraditional,
+      withVariant,
+      sources: META.sources,
+    };
+  }
+
+  /** 取某一级的全部字 */
+  function levelOf(n) {
+    const lv = Number(n);
+    if (![1, 2, 3].includes(lv)) return null;
+    return {
+      level: lv,
+      info: LEVELS[String(lv)] || null,
+      total: byLevelList[lv].length,
+      offset: 0,
+      items: byLevelList[lv],
+    };
+  }
+
+  let toastTimer;
+  function toast(message) {
+    el.toast.textContent = message;
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1800);
+  }
+
+  // ---------- 结果渲染 ----------
+  function relationRow(label, chars) {
+    if (!chars || !chars.length) {
+      return `<div class="rel-row"><span class="k">${label}</span><span class="none">无</span></div>`;
+    }
+    return `<div class="rel-row"><span class="k">${label}</span><span class="v">` +
+      chars.map((c) => `<span class="rel-char" data-char="${escapeHtml(c)}" title="查询「${escapeHtml(c)}」">${escapeHtml(c)}</span>`).join('') +
+      '</span></div>';
+  }
+
+  function renderResult(data) {
+    if (!data.ok) {
+      const cp = data.queryCodePoint ? `<p>该字码位：<code>${escapeHtml(data.queryCodePoint)}</code>（不在表内，故无编号与级别）</p>` : '';
+      el.result.innerHTML = `<div class="empty-state"><div class="mark">✕</div>
+        <div><h3>未收录</h3><p>${escapeHtml(data.error || '查询失败')}</p>${cp}</div></div>`;
+      return;
+    }
+
+    el.result.innerHTML = data.results.map((r, i) => {
+      const matched = r.matchedAs === '规范字'
+        ? '<span class="badge matched">规范字</span>'
+        : `<span class="badge matched">由${escapeHtml(r.matchedAs)}反查</span>`;
+      return `
+      <div class="result-head"${i ? ' style="margin-top:20px;border-top:1px dashed var(--line);padding-top:18px"' : ''}>
+        <div class="glyph">${escapeHtml(r.char)}</div>
+        <div class="result-main">
+          <div class="headline">
+            <span class="num"><em>编号</em>${r.index}</span>
+            <span class="badge l${r.level}">${escapeHtml(r.levelName)} · ${r.level} 级</span>
+            ${matched}
+          </div>
+          <div class="meta">${escapeHtml(r.codePoint)}　全表第 ${r.index} / ${DATA.entries.length} 字</div>
+          <div class="actions" style="margin-top:10px">
+            <button class="ghost" data-copy="${escapeHtml(r.char)}" type="button">复制汉字</button>
+            <button class="ghost" data-copy="${r.index}" type="button">复制编号</button>
+          </div>
+        </div>
+      </div>
+      <div class="relations">
+        ${relationRow('繁体字', r.traditional)}
+        ${relationRow('异体字', r.variant)}
+      </div>`;
+    }).join('');
+  }
+
+  async function runQuery(raw) {
+    const char = (raw == null ? '' : raw).trim();
+    if (!char) {
+      el.input.focus();
+      toast('请输入一个汉字');
+      return;
+    }
+    try {
+      const data = queryChar(char);
+      renderResult(data);
+      if (data.ok) remember(data.query);
+    } catch (err) {
+      el.result.innerHTML = `<div class="empty-state"><div class="mark">!</div>
+        <div><h3>查询出错</h3><p>${escapeHtml(err.message)}</p></div></div>`;
+    }
+  }
+
+  // ---------- 分级统计 ----------
+  function loadStats() {
+    const stats = statsOf();
+    el.statsSummary.textContent = `共 ${stats.total} 字 · 带繁体字 ${stats.withTraditional} 字 · 带异体字 ${stats.withVariant} 字`;
+    el.levels.innerHTML = stats.levels.map((lv) => `
+      <button class="lvl-card" type="button" data-level="${lv.level}">
+        <div class="t"><span class="badge l${lv.level}">${lv.level} 级</span>${escapeHtml(lv.name)}</div>
+        <div class="c">${lv.actualCount}<span>字</span></div>
+        <div class="d">编号 ${lv.from}–${lv.to}</div>
+        <div class="d">${escapeHtml(lv.description)}</div>
+      </button>`).join('');
+  }
+
+  // ---------- 浏览字表 ----------
+  function renderTabs() {
+    el.tabs.innerHTML = [1, 2, 3].map((lv) =>
+      `<button class="tab${lv === currentLevel ? ' on' : ''}" type="button" data-level="${lv}">${LEVEL_TEXT[lv]}</button>`
+    ).join('');
+  }
+
+  function loadLevel(level) {
+    currentLevel = level;
+    renderTabs();
+    const data = levelOf(level);
+    el.gridNote.textContent = `${data.info.name}（${data.info.from}–${data.info.to}）共 ${data.total} 字，已全部列出`;
+    el.grid.innerHTML = data.items.map((it) =>
+      `<span class="cell" data-in-table="true" data-char="${escapeHtml(it.char)}" title="第 ${it.index} 号 · ${it.level} 级">${escapeHtml(it.char)}</span>`
+    ).join('');
+  }
+
+  // ---------- 最近查询 ----------
+  function readHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list.filter((c) => byChar.has(c)).slice(0, 12) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function renderHistory() {
+    const list = readHistory();
+    el.historyPanel.hidden = list.length === 0;
+    el.history.innerHTML = list.map((c) =>
+      `<button class="chip" type="button" data-char="${escapeHtml(c)}">${escapeHtml(c)}</button>`
+    ).join('');
+  }
+
+  function remember(char) {
+    try {
+      const list = readHistory().filter((c) => c !== char);
+      list.unshift(char);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 12)));
+      renderHistory();
+    } catch { /* 忽略存储失败（隐私模式等） */ }
+  }
+
+  // ---------- 交互绑定 ----------
+  function bind() {
+    let composing = false;
+
+    function commit(raw) {
+      const value = (raw == null ? el.input.value : raw);
+      const char = String(value).trim();
+      if (char) el.input.value = char;
+      runQuery(char);
+    }
+
+    el.input.addEventListener('compositionstart', () => { composing = true; el.input.classList.add('typing'); });
+    el.input.addEventListener('compositionend', () => {
+      composing = false;
+      el.input.classList.remove('typing');
+      if (el.input.value) commit();
+    });
+    el.input.addEventListener('input', () => {
+      if (composing) return;                 // 输入法组字期间不打断
+      if (el.input.value) commit();
+    });
+    el.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !composing) {
+        e.preventDefault();
+        commit();
+      }
+    });
+    el.queryBtn.addEventListener('click', () => commit());
+
+    document.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip, .rel-char, .cell');
+      if (chip && chip.dataset.char) {
+        const c = chip.dataset.char;
+        el.input.value = c;
+        el.input.focus();
+        runQuery(c);
+        return;
+      }
+      const lvl = e.target.closest('[data-level]');
+      if (lvl) {
+        loadLevel(Number(lvl.dataset.level));
+        return;
+      }
+      const copy = e.target.closest('[data-copy]');
+      if (copy) {
+        const text = copy.dataset.copy;
+        const done = () => toast('已复制：' + text);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done).catch(() => toast('复制失败'));
+        } else {
+          toast('当前环境不支持自动复制');
+        }
+      }
+    });
+
+    el.clearHistory.addEventListener('click', () => {
+      try { localStorage.removeItem(HISTORY_KEY); } catch { /* 忽略 */ }
+      renderHistory();
+      toast('已清空最近查询');
+    });
+
+    return { commit };
+  }
+
+  // ---------- 启动 ----------
+  function start() {
+    const { commit } = bind();
+    renderHistory();
+    loadStats();
+    loadLevel(1);
+
+    // 支持 ?char=字 直达查询，便于分享与收藏
+    const preset = new URLSearchParams(location.search).get('char');
+    if (preset && preset.trim()) {
+      commit(preset);
+    } else {
+      el.input.focus();
+    }
+  }
+
+  start();
+})();
+</script>
+</body>
+</html>
